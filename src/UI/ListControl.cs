@@ -75,9 +75,19 @@ public class ListControl : UIControl
 		{
 			//set position
 			child.x = this.x;
-			child.y = this.y;
 			child.width = this.width;
-			y += child.height + (child == Children.Last() ? 0 : Gap);
+			
+			//only update y if the child is visible
+			if (child.visible)
+			{
+				child.y = this.y;
+				y += child.height + (child == Children.Last() ? 0 : Gap);
+			}
+			else
+			{
+				child.y = -1000;
+			}
+
 		}
 		y = initialY;
 
@@ -233,7 +243,10 @@ public class ListControl : UIControl
 		int height = 0;
 		foreach (var child in Children)
 		{
-			height += child.height + Gap;
+			if (child.visible)
+			{
+				height += child.height + Gap;
+			}
 		}
 		return height - Gap;
 	}

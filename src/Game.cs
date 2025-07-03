@@ -8,6 +8,8 @@ public class Game
 	public float InstallProgress { get; set; } = 0; // set by ContentDownloader
 	public JObject AppInfo { get; set; }
 
+	public bool IsFavorite { get; set; } = false;
+
 	public Game()
 	{
 	}

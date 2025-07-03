@@ -32,7 +32,8 @@ public class MainWindow : SteamWindow
 
 	ListControl gameList;
 
-	public bool ReloadGameList = false;
+	public bool ReloadGameList = true; // reload on startup
+	Dictionary<int, bool> catagoryOpenState; // Catagory index, open state
 
 	public MainWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
 	{
@@ -135,11 +136,12 @@ public class MainWindow : SteamWindow
 			};
 
 
-			//game list
-			{
-				gameList = new ListControl(panel, renderer, "gamelist", 1, 90, mWidth - 2, mHeight - 117 - 90);
-				panel.AddControl(gameList);
-			}
+		}
+
+		//game list
+		{
+			gameList = new ListControl(panel, renderer, "gamelist", 1, 90, mWidth - 2, mHeight - 117 - 90);
+			panel.AddControl(gameList);
 		}
 
 		FriendsButton.OnClick = () =>
@@ -406,29 +408,73 @@ public class MainWindow : SteamWindow
 		}
 	}
 
+	void CreateGameCategory(string categoryName, int index, bool open = true)
+	{
+		GameCategoryToggleControl gameCategoryToggleControl = new GameCategoryToggleControl(panel, renderer, $"gamecategorytoggle_{categoryName}", categoryName, gameList, index, open);
+		gameList.Children.Add(gameCategoryToggleControl);
+		panel.AddControl(gameCategoryToggleControl);
+	}
+
 	void LoadGameList()
 	{
+		//keep track of catagory open state
+		catagoryOpenState = new Dictionary<int, bool>();
+		foreach (var gameCategoryToggleControl in gameList.Children.OfType<GameCategoryToggleControl>())
+		{
+			catagoryOpenState[gameCategoryToggleControl.categoryIndex] = gameCategoryToggleControl.Open;
+		}
+
 		gameList.Clear(false);
-		foreach (var game in steam.Games)
+
+		//create favorites category
+		CreateGameCategory("MY FAVORITES", 0, catagoryOpenState.ContainsKey(0) ? catagoryOpenState[0] : true);
+		foreach (var game in steam.Games.Where(g => g.IsFavorite))
 		{
 			CreateGameItemControl(game);
 		}
 
-		//sort by status
-		gameList.Sort((b, a) =>
+		// create categories first
+		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);		
+		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending))
 		{
-			GameItemControl gameA = a as GameItemControl;
-			GameItemControl gameB = b as GameItemControl;
-			return gameA.game.Status.CompareTo(gameB.game.Status);
-		});
+			CreateGameItemControl(game);
+		}
+
+		// create not installed category
+		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);		
+		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled))
+		{
+			CreateGameItemControl(game);
+		}
 
 		//if there was a game selected, select it again
 		if (selectedGameID != 0)
-		{
-			GameItemControl gameItemControl = gameList.Children.Find(x => (x as GameItemControl).game.AppID == selectedGameID) as GameItemControl;
+		{			
+			GameItemControl gameItemControl = gameList.Children
+				.OfType<GameItemControl>()
+				.FirstOrDefault(x => x.game != null && x.game.AppID == selectedGameID);
+
 			if (gameItemControl != null)
 			{
 				gameItemControl.highlighted = true;
+			}
+		}
+
+		//if a catagory has no games, hide it
+		foreach (var child in gameList.Children)
+		{
+			if (child is GameCategoryToggleControl gameCategoryToggleControl)
+			{
+				gameCategoryToggleControl.visible = gameCategoryToggleControl.GetGamesBelongingToCategory().Count > 0;
+			}
+		}
+
+		//update game visibility
+		foreach (var child in gameList.Children)
+		{
+			if (child is GameCategoryToggleControl gameCategoryToggleControl)
+			{
+				gameCategoryToggleControl.UpdateGameVisibility();
 			}
 		}
 	}
@@ -442,8 +488,6 @@ public class MainWindow : SteamWindow
 
 		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, "Properties");
 		panel.AddControl(PropertiesButton);
-
-		LoadGameList();
 	}
 
 	void CreateGameItemControl(Game game)
