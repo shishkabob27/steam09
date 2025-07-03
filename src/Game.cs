@@ -72,7 +72,7 @@ public class Game
 	{
 		long TotalDownloadSize = 0; // in bytes
 
-		if (AppInfo == null)
+		if (AppInfo == null || AppInfo["depots"] == null)
 		{
 			return 0;
 		}
