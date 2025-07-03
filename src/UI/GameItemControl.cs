@@ -51,7 +51,7 @@ public class GameItemControl : UIControl
 		if (game.Status == GameStatus.NotInstalled) textColor = new Color(121, 126, 121, 255);
 		parent.DrawText(game.Name, 49, y + 5, textColor);
 		parent.DrawText(game.GetStatusString(), (width / 2) - 24, y + 5, textColor);
-		parent.DrawText(game.GetDeveloper(), (width - 248), y + 5, textColor, true, true);
+		parent.DrawText(game.GetDeveloper(), (width - 248), y + 5, game.Status == GameStatus.NotInstalled ? textColor : new Color(255, 255, 255, 255), true, true);
 
 	}
 }
