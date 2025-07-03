@@ -421,6 +421,16 @@ public class MainWindow : SteamWindow
 			GameItemControl gameB = b as GameItemControl;
 			return gameA.game.Status.CompareTo(gameB.game.Status);
 		});
+
+		//if there was a game selected, select it again
+		if (selectedGameID != 0)
+		{
+			GameItemControl gameItemControl = gameList.Children.Find(x => (x as GameItemControl).game.AppID == selectedGameID) as GameItemControl;
+			if (gameItemControl != null)
+			{
+				gameItemControl.highlighted = true;
+			}
+		}
 	}
 
 	void CreateControls()
