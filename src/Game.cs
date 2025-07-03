@@ -130,6 +130,13 @@ public class Game
 
 		if (AppInfo == null)
 		{
+			Console.WriteLine($"GetLaunchConfigs: AppInfo is null for {Name}");
+			return launchConfigs;
+		}
+
+		if (AppInfo["config"] == null)
+		{
+			Console.WriteLine($"GetLaunchConfigs: AppInfo config is null for {Name}");
 			return launchConfigs;
 		}
 
