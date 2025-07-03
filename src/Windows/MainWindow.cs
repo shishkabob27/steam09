@@ -260,15 +260,12 @@ public class MainWindow : SteamWindow
 		panel.DrawTexture(ResizeTexture, mWidth - 23, mHeight - 23);
 
 		//Draw bottom buttons
-		/*
 		NewsButton.Draw();
 		panel.DrawText("News", 71, mHeight - 27, new Color(143, 146, 141, 255));
-		*/
 
 		FriendsButton.Draw();
 		panel.DrawText("Friends", 179, mHeight - 27, new Color(143, 146, 141, 255));
 
-		/*
 		ServersButton.Draw();
 		panel.DrawText("Servers", 299, mHeight - 27, new Color(143, 146, 141, 255));
 
@@ -277,7 +274,6 @@ public class MainWindow : SteamWindow
 
 		SupportButton.Draw();
 		panel.DrawText("Support", 538, mHeight - 27, new Color(143, 146, 141, 255));
-		*/
 
 		SDL.RenderPresent(renderer);
 	}
