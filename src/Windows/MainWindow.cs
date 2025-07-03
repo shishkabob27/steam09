@@ -434,14 +434,14 @@ public class MainWindow : SteamWindow
 		}
 
 		// create categories first
-		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);		
+		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
 		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create not installed category
-		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);		
+		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
 		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled))
 		{
 			CreateGameItemControl(game);
@@ -449,7 +449,7 @@ public class MainWindow : SteamWindow
 
 		//if there was a game selected, select it again
 		if (selectedGameID != 0)
-		{			
+		{
 			GameItemControl gameItemControl = gameList.Children
 				.OfType<GameItemControl>()
 				.FirstOrDefault(x => x.game != null && x.game.AppID == selectedGameID);

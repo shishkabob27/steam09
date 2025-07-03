@@ -76,7 +76,7 @@ public class ListControl : UIControl
 			//set position
 			child.x = this.x;
 			child.width = this.width;
-			
+
 			//only update y if the child is visible
 			if (child.visible)
 			{
@@ -267,7 +267,7 @@ public class ListControl : UIControl
 		{
 			parent.RemoveControl(child);
 		}
-		
+
 		Children.Clear();
 		if (resetScroll) scroll = 0;
 	}
