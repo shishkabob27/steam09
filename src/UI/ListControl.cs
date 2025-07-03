@@ -250,6 +250,11 @@ public class ListControl : UIControl
 
 	public void Clear(bool resetScroll = true)
 	{
+		foreach (var child in Children)
+		{
+			parent.RemoveControl(child);
+		}
+		
 		Children.Clear();
 		if (resetScroll) scroll = 0;
 	}

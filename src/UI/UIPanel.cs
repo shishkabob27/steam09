@@ -148,6 +148,20 @@ public class UIPanel
 		controls.Add(control);
 	}
 
+	public void RemoveControl(UIControl control)
+	{
+		control.focused = false;
+		control.mouseOver = false;
+		control.mouseDown = false;
+
+		if (lastClickedControl == control)
+		{
+			lastClickedControl = null;
+		}
+
+		controls.Remove(control);
+	}
+
 	public void SetFocus(UIControl control)
 	{
 		if (lastClickedControl != null)
