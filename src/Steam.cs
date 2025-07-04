@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using Microsoft.Win32;
 using SDL_Sharp;
 using SDL_Sharp.Loader;
@@ -44,7 +45,10 @@ public partial class Steam
 		SDL.Init(SdlInitFlags.Video | SdlInitFlags.Events);
 		TTF.Init();
 
-		SetupRegistry();
+		if (OperatingSystem.IsWindows())
+		{
+			SetupRegistry();
+		}
 
 		// Initialize Steam
 		steamClient = new SteamClient();
@@ -105,6 +109,7 @@ public partial class Steam
 		}
 	}
 
+	[SupportedOSPlatform("windows")]
 	void SetupRegistry()
 	{
 		string steam09Path = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
@@ -118,6 +123,8 @@ public partial class Steam
 		Registry.CurrentUser.CreateSubKey("Software\\Valve\\Steam").SetValue("SteamPath", steam09Path);
 
 		Registry.CurrentUser.CreateSubKey("Software\\Valve\\Steam\\ActiveProcess").SetValue("pid", Process.GetCurrentProcess().Id);
+		Registry.CurrentUser.CreateSubKey("Software\\Valve\\Steam\\ActiveProcess").SetValue("SteamClientDll", $"{steam09Path}\\steamclient.dll");
+		Registry.CurrentUser.CreateSubKey("Software\\Valve\\Steam\\ActiveProcess").SetValue("SteamClientDll64", $"{steam09Path}\\steamclient64.dll");
 	}
 
 	void SetupGameEnvironmentVariables(int appID)
