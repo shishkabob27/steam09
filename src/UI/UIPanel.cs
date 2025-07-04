@@ -27,10 +27,7 @@ public class UIPanel
 	//TEXTURES
 	public Texture radioButtonTexture;
 
-	public Texture categoryCollapsedTexture;
-	public Texture categoryExpandedTexture;
-	public Texture categoryCollapsedMouseOverTexture;
-	public Texture categoryExpandedMouseOverTexture;
+	public Texture categoryIconTexture;
 
 	public Texture checkboxTexture;
 
@@ -63,29 +60,8 @@ public class UIPanel
 
 		unsafe
 		{
-			Surface* surface = IMG.Load("resources/graphics/icon_collapse.png");
-			categoryCollapsedTexture = SDL.CreateTextureFromSurface(window.renderer, surface);
-			SDL.FreeSurface(surface);
-		}
-
-		unsafe
-		{
-			Surface* surface = IMG.Load("resources/graphics/icon_collapse_over.png");
-			categoryCollapsedMouseOverTexture = SDL.CreateTextureFromSurface(window.renderer, surface);
-			SDL.FreeSurface(surface);
-		}
-
-		unsafe
-		{
-			Surface* surface = IMG.Load("resources/graphics/icon_expand.png");
-			categoryExpandedTexture = SDL.CreateTextureFromSurface(window.renderer, surface);
-			SDL.FreeSurface(surface);
-		}
-
-		unsafe
-		{
-			Surface* surface = IMG.Load("resources/graphics/icon_expand_over.png");
-			categoryExpandedMouseOverTexture = SDL.CreateTextureFromSurface(window.renderer, surface);
+			Surface* surface = IMG.Load("resources/graphics/category_icon.png");
+			categoryIconTexture = SDL.CreateTextureFromSurface(window.renderer, surface);
 			SDL.FreeSurface(surface);
 		}
 

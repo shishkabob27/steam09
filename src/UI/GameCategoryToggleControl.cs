@@ -35,13 +35,13 @@ public class GameCategoryToggleControl : UIControl
 
 		if (mouseOver)
 		{
-			if (Open) parent.DrawTexture(parent.categoryCollapsedMouseOverTexture, x + 12, y + 15);
-			else parent.DrawTexture(parent.categoryExpandedMouseOverTexture, x + 12, y + 15);
+			if (Open) parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 1, 0, 14, 9);
+			else parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 1, 1, 14, 9);
 		}
 		else
 		{
-			if (Open) parent.DrawTexture(parent.categoryCollapsedTexture, x + 12, y + 15);
-			else parent.DrawTexture(parent.categoryExpandedTexture, x + 12, y + 15);
+			if (Open) parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 0, 0, 14, 9);
+			else parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 0, 1, 14, 9);
 		}
 
 		parent.DrawText(text, x + 28, y + height - 15, new Color(196, 181, 80, 255), fontSize: 7);
