@@ -80,9 +80,7 @@ public class MainWindow : SteamWindow
 		panel.AddControl(TabList);
 
 		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_store", 0, 0, 66, 22, "Store", TabList));
-		/*
-		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_community", 0, 0, 71, 22, "Community", TabList));
-		*/
+		//TabList.Children.Add(new TabItem(panel, renderer, "tabitem_community", 0, 0, 71, 22, "Community", TabList));
 		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_mygames", 0, 0, 66, 22, "My games", TabList));
 
 		TabList.SetTabSelected("tabitem_mygames", true);
@@ -134,8 +132,6 @@ public class MainWindow : SteamWindow
 			{
 				browser?.LoadURL("https://store.steampowered.com/");
 			};
-
-
 		}
 
 		//game list
@@ -484,6 +480,14 @@ public class MainWindow : SteamWindow
 
 		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, "Properties");
 		panel.AddControl(PropertiesButton);
+		PropertiesButton.OnClick = () =>
+		{
+			Game game = steam.Games.Find(x => x.AppID == selectedGameID);
+			if (game == null) return;
+
+			GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(steam, "", 516, 400, game);
+			steam.PendingWindows.Add(gamePropertiesWindow);
+		};
 	}
 
 	void CreateGameItemControl(Game game)

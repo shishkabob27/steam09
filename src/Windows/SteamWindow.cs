@@ -81,6 +81,12 @@ public class SteamWindow
 		}
 	}
 
+	public void SetWindowTitle(string title)
+	{
+		this.title = title;
+		SDL.SetWindowTitle(window, title);
+	}
+
 	public virtual void Update(float deltaTime)
 	{
 		//if window is not shown, dont update

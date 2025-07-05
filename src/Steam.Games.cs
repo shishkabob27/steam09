@@ -251,7 +251,7 @@ public partial class Steam
 			if (appRequests.Count > 0)
 			{
 				Console.WriteLine("Getting app info for " + appRequests.Count + " games");
-				
+
 				var appInfo = await steamApps.PICSGetProductInfo(appRequests, []);
 
 				foreach (var appResult in appInfo.Results)

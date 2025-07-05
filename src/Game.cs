@@ -188,4 +188,34 @@ public class Game
 
 		return true;
 	}
+
+	public string GetHomepage()
+	{
+		if (AppInfo == null)
+		{
+			return "[ none available ]";
+		}
+
+		JToken homepage = AppInfo["extended"]?["homepage"];
+
+		return homepage?.ToString() ?? "[ none available ]";
+	}
+
+	//user display name, url
+	public Tuple<string, string> GetManual()
+	{
+		if (AppInfo == null)
+		{
+			return new Tuple<string, string>("[ none available ]", "");
+		}
+
+		JToken manualUrl = AppInfo["extended"]?["gamemanualurl"];
+
+		if (manualUrl == null || manualUrl.ToString() == "null")
+		{
+			return new Tuple<string, string>("[ none available ]", "");
+		}
+
+		return new Tuple<string, string>($"{Name} manual", manualUrl.ToString());
+	}
 }
