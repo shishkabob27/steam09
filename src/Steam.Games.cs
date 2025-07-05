@@ -74,7 +74,7 @@ public partial class Steam
 
 		try
 		{
-			await ContentDownloader.DownloadAppAsync((uint)appID, new List<(uint, ulong)> { }, "public", "windows", "64", "english", false, false, game);
+			await ContentDownloader.DownloadAppAsync((uint)appID, new List<(uint, ulong)> { }, "public", Util.GetSteamOS(), Util.GetSteamArch(), "english", false, false, game);
 			game.Status = GameStatus.Installed;
 
 			//create dummy file to indicate game is installed

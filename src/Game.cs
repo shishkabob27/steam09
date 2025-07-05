@@ -1,3 +1,4 @@
+using DepotDownloader;
 using Newtonsoft.Json.Linq;
 
 public class Game
@@ -152,10 +153,10 @@ public class Game
 				}
 
 				//check if os matches
-				if (launch["config"] != null && launch["config"]["oslist"] != null && !launch["config"]["oslist"].ToString().Contains("windows")) continue;
+				if (launch["config"] != null && launch["config"]["oslist"] != null && !launch["config"]["oslist"].ToString().Contains(Util.GetSteamOS())) continue;
 
 				//check if osarch matches
-				if (launch["config"] != null && launch["config"]["osarch"] != null && launch["config"]["osarch"].ToString() != "64") continue;
+				if (launch["config"] != null && launch["config"]["osarch"] != null && launch["config"]["osarch"].ToString() != Util.GetSteamArch()) continue;
 
 				//TODO: allow betas
 				//check if the betakey exists, if yes, ignore it
