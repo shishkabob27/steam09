@@ -25,6 +25,8 @@ public class SteamWindow
 	public bool MouseFocus { get { return mMouseFocus; } }
 	public bool KeyboardFocus { get { return mKeyboardFocus; } }
 
+	public virtual bool isPopupWindow { get { return false; } }
+
 	private const int TITLE_BAR_HEIGHT = 21;
 	private const int RESIZE_CORNER_SIZE = 20;
 
@@ -39,6 +41,11 @@ public class SteamWindow
 		this.steam = steam;
 
 		WindowFlags windowFlags = WindowFlags.Shown | WindowFlags.InputFocus | WindowFlags.MouseFocus | WindowFlags.Borderless;
+
+		if (isPopupWindow)
+		{
+			windowFlags |= WindowFlags.PopupMenu;
+		}
 
 		window = SDL.CreateWindow(title, SDL.WINDOWPOS_UNDEFINED, SDL.WINDOWPOS_UNDEFINED, width, height, windowFlags);
 		this.title = title;
@@ -77,7 +84,7 @@ public class SteamWindow
 
 				return HitTestResult.Normal;
 			};
-			SDL.SetWindowHitTest(window, hitTestCallback, null);
+			if (!isPopupWindow) SDL.SetWindowHitTest(window, hitTestCallback, null);
 		}
 	}
 
@@ -85,6 +92,16 @@ public class SteamWindow
 	{
 		this.title = title;
 		SDL.SetWindowTitle(window, title);
+	}
+
+	public void SetWindowPosition(int x, int y)
+	{
+		SDL.SetWindowPosition(window, x, y);
+	}
+
+	public void SetWindowSize(int width, int height)
+	{
+		SDL.SetWindowSize(window, width, height);
 	}
 
 	public virtual void Update(float deltaTime)
@@ -128,6 +145,8 @@ public class SteamWindow
 		{
 			return;
 		}
+
+		if (isPopupWindow) return;
 
 		//draw window content
 		SDL.SetRenderDrawColor(renderer, 70, 70, 70, 255);

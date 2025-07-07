@@ -18,6 +18,8 @@ public class UIPanel
 
 	bool leftMouseDown = false;
 	bool rightMouseDown = false;
+	bool prevLeftMouseDown = false;
+	bool prevRightMouseDown = false;
 
 	int mouseX;
 	int mouseY;
@@ -154,6 +156,8 @@ public class UIPanel
 
 		MouseButtonMask mouseState = SDL.GetGlobalMouseState(out int x, out int y);
 
+		prevLeftMouseDown = leftMouseDown;
+		prevRightMouseDown = rightMouseDown;
 		leftMouseDown = mouseState.HasFlag(MouseButtonMask.Left) && window.MouseFocus;
 		rightMouseDown = mouseState.HasFlag(MouseButtonMask.Right) && window.MouseFocus;
 
@@ -180,35 +184,37 @@ public class UIPanel
 
 
 			//mouse down
-			if (control.mouseOver && leftMouseDown && control.acceptMouseButtons)
+			if (control.mouseOver && (leftMouseDown || rightMouseDown) && control.acceptMouseButtons)
 			{
 				control.mouseDown = true;
 			}
 
-			//mouse up
-			if (control.mouseDown && !leftMouseDown && control.acceptMouseButtons)
+			//handle left mouse up
+			if (control.mouseDown && prevLeftMouseDown && !leftMouseDown && control.acceptMouseButtons)
+			{
+				if (timeSinceLastClick < DOUBLE_CLICK_TIME && lastClickedControl == control)
+				{
+					timeSinceLastClick = 0;
+					control.OnDoubleClick?.Invoke();
+				}
+				else //single click
+				{
+					lastClickedControl = control;
+					timeSinceLastClick = 0;
+					control.OnClick?.Invoke();
+				}
+			}
+
+			//handle right mouse up
+			if (control.mouseOver && prevRightMouseDown && !rightMouseDown && control.acceptMouseButtons)
+			{
+				control.OnRightClick?.Invoke();
+			}
+
+			//clear mouse down state if no buttons are pressed
+			if (!leftMouseDown && !rightMouseDown)
 			{
 				control.mouseDown = false;
-
-				//if right click, invoke right click
-				if (rightMouseDown)
-				{
-					control.OnRightClick?.Invoke();
-				}
-				else
-				{
-					if (timeSinceLastClick < DOUBLE_CLICK_TIME && lastClickedControl == control)
-					{
-						timeSinceLastClick = 0;
-						control.OnDoubleClick?.Invoke();
-					}
-					else //single click
-					{
-						lastClickedControl = control;
-						timeSinceLastClick = 0;
-						control.OnClick?.Invoke();
-					}
-				}
 			}
 
 			control.focused = lastClickedControl == control;

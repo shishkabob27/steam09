@@ -476,7 +476,7 @@ public class MainWindow : SteamWindow
 		//these button's positions are relative to the window
 		GameActionButton = new ButtonControl(panel, renderer, "gameactionbutton", 0, 0, 98, 24, "Launch");
 		panel.AddControl(GameActionButton);
-		GameActionButton.OnClick = OnGameAction;
+		GameActionButton.OnClick = () => OnGameAction(selectedGameID);
 
 		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, "Properties");
 		panel.AddControl(PropertiesButton);
@@ -511,19 +511,38 @@ public class MainWindow : SteamWindow
 			gameItemControl.highlighted = true;
 			selectedGameID = game.AppID;
 		};
-		gameItemControl.OnDoubleClick = () => OnGameAction();
+		gameItemControl.OnDoubleClick = () => OnGameAction(game.AppID);
 		gameItemControl.OnRightClick = () =>
 		{
-			Console.WriteLine("GameItemControl right clicked: " + game.AppID);
+			//check if mouse cursor is withen bounds of the list
+			if (panel.MouseY < gameList.y || panel.MouseY > gameList.y + gameList.height) return;
+
+			gameItemControl.OnClick();
+
+			PopupMenuWindow popupMenuWindow = new PopupMenuWindow(steam, $"Game Actions - {game.Name}", 120, 0);
+			popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? "Launch game..." : "Install game...", () =>
+			{
+				OnGameAction(game.AppID);
+			});
+			popupMenuWindow.AddSeparator();
+			popupMenuWindow.AddItem("Properties", () =>
+			{
+				Game game = steam.Games.Find(x => x.AppID == gameItemControl.game.AppID);
+				if (game == null) return;
+
+				GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(steam, "", 516, 400, game);
+				steam.PendingWindows.Add(gamePropertiesWindow);
+			});
+			steam.PendingWindows.Add(popupMenuWindow);
 		};
 	}
 
 	//called when the game is double clicked in the game list or the game action button is clicked while a game is selected
-	async void OnGameAction()
+	async void OnGameAction(int gameID)
 	{
 		if (inBrowserWindow) return;
 
-		Game game = steam.Games.Find(x => x.AppID == selectedGameID);
+		Game game = steam.Games.Find(x => x.AppID == gameID);
 		if (game == null) return;
 
 		if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.UpdatePending)
