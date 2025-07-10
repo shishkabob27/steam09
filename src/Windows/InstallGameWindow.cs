@@ -1,4 +1,3 @@
-using QRCoder;
 using SDL_Sharp;
 
 public class InstallGameWindow : SteamWindow
