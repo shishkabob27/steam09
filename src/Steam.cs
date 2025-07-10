@@ -17,6 +17,8 @@ public partial class Steam
 	float now = 0;
 	float lastTime = 0;
 
+	public TaskIcon TaskIcon;
+
 	public List<SteamWindow> Windows = new List<SteamWindow>();
 	public List<SteamWindow> PendingWindows = new List<SteamWindow>();
 	public List<SteamWindow> PendingWindowsToRemove = new List<SteamWindow>();
@@ -49,6 +51,9 @@ public partial class Steam
 		{
 			SetupRegistry();
 		}
+
+		TaskIcon = new TaskIcon();
+		TaskIcon.Initialize();
 
 		// Initialize Steam
 		steamClient = new SteamClient();
@@ -135,8 +140,40 @@ public partial class Steam
 
 	public void Shutdown()
 	{
+		TaskIcon?.Cleanup();
 		TTF.Quit();
 		SDL.Quit();
+	}
+
+	public void ShowMainWindow()
+	{
+		//check if user is logged in
+		if (CurrentUser == null)
+		{
+			return;
+		}
+
+		if (mainwindowState >= 1) //if main window has already been shown or is loading, don't show it again
+		{
+			return;
+		}
+
+		foreach (SteamWindow window in Windows)
+		{
+			if (window is MainWindow)
+			{
+				window.FocusWindow();
+				return;
+			}
+		}
+
+		mainwindowState = 1;
+	}
+
+	public void QuitApplication()
+	{
+		Shutdown();
+		Environment.Exit(0);
 	}
 
 	public void Loop()
@@ -164,6 +201,8 @@ public partial class Steam
 		now = (float)SDL.GetTicks64() / 1000f;
 		float deltaTime = now - lastTime;
 		lastTime = now;
+
+		TaskIcon?.ProcessMessages();
 
 		// Process any queued window creation requests from background threads
 		SteamGuardAuthenticator.ProcessWindowCreationQueue();
