@@ -170,8 +170,6 @@ public class TaskIcon
 
         Shell_NotifyIcon(NIM_ADD, ref nid);
         isInitialized = true;
-
-        Console.WriteLine("Tray icon initialized.");
     }
 
     public bool LoadIconFromFile(string iconPath)

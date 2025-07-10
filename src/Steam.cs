@@ -153,7 +153,7 @@ public partial class Steam
 			return;
 		}
 
-		if (mainwindowState >= 1) //if main window has already been shown or is loading, don't show it again
+		if (mainwindowState == 1) //if main window has already been shown, don't show it again
 		{
 			return;
 		}
@@ -258,6 +258,12 @@ public partial class Steam
 		foreach (SteamWindow window in Windows)
 		{
 			window.Update(deltaTime);
+		}
+
+		//if no windows exists and the user is not logged in, quit
+		if (Windows.Count == 0 && CurrentUser == null)
+		{
+			QuitApplication();
 		}
 	}
 
