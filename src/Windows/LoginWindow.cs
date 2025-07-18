@@ -64,6 +64,7 @@ public class LoginWindow : SteamWindow
 		panel.AddControl(LostPasswordButton);
 
 		Steam.Instance.manager.Subscribe<SteamClient.ConnectedCallback>(OnConnected);
+		Steam.Instance.manager.Subscribe<SteamClient.DisconnectedCallback>(OnDisconnected);
 	}
 
 	public override void Update(float deltaTime)
@@ -102,6 +103,11 @@ public class LoginWindow : SteamWindow
 	{
 		isLoggingIn = true;
 		Steam.Instance.steamClient.Connect();
+	}
+
+	void OnDisconnected(SteamClient.DisconnectedCallback callback)
+	{
+		isLoggingIn = false;
 	}
 
 	async void OnConnected(SteamClient.ConnectedCallback callback)
