@@ -49,22 +49,19 @@ public class FontRenderer
 				Rect sourceRect = new Rect((xPos * 12), (yPos * 12), 11, 11);
 				Rect destRect = new Rect(x, y, 11, 11);
 
-				unsafe
+				//get color from texture, this is dumb but it works
+				SDL.GetTextureColorMod(texture, out byte r, out byte g, out byte b);
+				SDL.SetTextureColorMod(texture, color.R, color.G, color.B);
+				SDL.RenderCopy(renderer, texture, ref sourceRect, ref destRect);
+
+				//if bold, render again with x offset 1
+				if (bold)
 				{
-					//get color from texture, this is dumb but it works
-					SDL.GetTextureColorMod(texture, out byte r, out byte g, out byte b);
-					SDL.SetTextureColorMod(texture, color.R, color.G, color.B);
-					SDL.RenderCopy(renderer, texture, &sourceRect, &destRect);
-
-					//if bold, render again with x offset 1
-					if (bold)
-					{
-						destRect.X += 1;
-						SDL.RenderCopy(renderer, texture, &sourceRect, &destRect);
-					}
-
-					SDL.SetTextureColorMod(texture, r, g, b);
+					destRect.X += 1;
+					SDL.RenderCopy(renderer, texture, ref sourceRect, ref destRect);
 				}
+
+				SDL.SetTextureColorMod(texture, r, g, b);
 
 				x += widths[index] + (bold ? 1 : 0);
 			}
