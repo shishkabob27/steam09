@@ -420,21 +420,21 @@ public class MainWindow : SteamWindow
 
 		//create favorites category
 		CreateGameCategory("MY FAVORITES", 0, catagoryOpenState.ContainsKey(0) ? catagoryOpenState[0] : true);
-		foreach (var game in steam.Games.Where(g => g.IsFavorite))
+		foreach (var game in steam.Games.Where(g => g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create categories first
 		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
-		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending))
+		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create not installed category
 		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
-		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled))
+		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
