@@ -33,6 +33,9 @@ public partial class Steam
 
 		users.Add(user);
 		File.WriteAllText("config/loginusers.json", JsonConvert.SerializeObject(users, Formatting.Indented));
+
+		Directory.CreateDirectory($"userdata/{user.SteamID}");
+		Directory.CreateDirectory($"userdata/{user.SteamID}/config");
 	}
 
 	void RemoveLoginUser(User user)

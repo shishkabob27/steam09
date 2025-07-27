@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using SDL_Sharp;
 using SDL_Sharp.Ttf;
 
@@ -155,6 +156,8 @@ public class MainWindow : SteamWindow
 		};
 
 		CreateControls();
+
+		LoadFavorites();
 	}
 
 	void OnTabSelected(string tabName)
@@ -427,14 +430,14 @@ public class MainWindow : SteamWindow
 
 		// create categories first
 		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
-		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending).OrderBy(g => g.Name))
+		foreach (var game in steam.Games.Where(g => (g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending) && !g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create not installed category
 		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
-		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled).OrderBy(g => g.Name))
+		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled && !g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
@@ -499,6 +502,16 @@ public class MainWindow : SteamWindow
 		{
 			if (inBrowserWindow) return;
 
+			//check if mouse is over the favorite icon
+			Rect favoriteIconRect = gameItemControl.GetFavoriteIconRect();
+			if (favoriteIconRect.X <= panel.MouseX && favoriteIconRect.X + favoriteIconRect.Width >= panel.MouseX && favoriteIconRect.Y <= panel.MouseY && favoriteIconRect.Y + favoriteIconRect.Height >= panel.MouseY)
+			{
+				game.IsFavorite = !game.IsFavorite;
+				SaveFavorites();
+				ReloadGameList = true;
+				return;
+			}
+
 			//dehighlight all other controls
 			foreach (var child in gameList.Children)
 			{
@@ -514,6 +527,8 @@ public class MainWindow : SteamWindow
 		gameItemControl.OnDoubleClick = () => OnGameAction(game.AppID);
 		gameItemControl.OnRightClick = () =>
 		{
+			if (inBrowserWindow) return;
+
 			//check if mouse cursor is withen bounds of the list
 			if (panel.MouseY < gameList.y || panel.MouseY > gameList.y + gameList.height) return;
 
@@ -554,6 +569,37 @@ public class MainWindow : SteamWindow
 		else if (game.Status == GameStatus.Installed)
 		{
 			steam.StartGame(game);
+		}
+	}
+
+	void SaveFavorites()
+	{
+		List<int> favoriteAppIds = new List<int>();
+		foreach (var game in steam.Games)
+		{
+			if (game.IsFavorite)
+			{
+				favoriteAppIds.Add(game.AppID);
+			}
+		}
+
+		File.WriteAllText($"userdata/{steam.CurrentUser.SteamID}/config/favorites.json", JsonConvert.SerializeObject(favoriteAppIds));
+	}
+
+	void LoadFavorites()
+	{
+		if (File.Exists($"userdata/{steam.CurrentUser.SteamID}/config/favorites.json"))
+		{
+			string favoritesJson = File.ReadAllText($"userdata/{steam.CurrentUser.SteamID}/config/favorites.json");
+			List<int> favoriteAppIds = JsonConvert.DeserializeObject<List<int>>(favoritesJson);
+			foreach (var appId in favoriteAppIds)
+			{
+				Game game = steam.Games.Find(x => x.AppID == appId);
+				if (game != null)
+				{
+					game.IsFavorite = true;
+				}
+			}
 		}
 	}
 }

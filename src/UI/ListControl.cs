@@ -265,6 +265,11 @@ public class ListControl : UIControl
 	{
 		foreach (var child in Children)
 		{
+			if (child is IDisposable disposable)
+			{
+				disposable.Dispose();
+			}
+			
 			parent.RemoveControl(child);
 		}
 

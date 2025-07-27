@@ -137,6 +137,11 @@ public class UIPanel
 			lastClickedControl = null;
 		}
 
+		if (control is IDisposable disposable)
+		{
+			disposable.Dispose();
+		}
+
 		controls.Remove(control);
 	}
 

@@ -73,11 +73,11 @@ public class GameCategoryToggleControl : UIControl
 				{
 					gamesBelongingToCategory.Add(gameItemControl);
 				}
-				else if ((gameItemControl.game.Status == GameStatus.Installed || gameItemControl.game.Status == GameStatus.UpdatePending) && categoryIndex == 1)
+				else if ((gameItemControl.game.Status == GameStatus.Installed || gameItemControl.game.Status == GameStatus.UpdatePending) && !gameItemControl.game.IsFavorite && categoryIndex == 1)
 				{
 					gamesBelongingToCategory.Add(gameItemControl);
 				}
-				else if (gameItemControl.game.Status == GameStatus.NotInstalled && categoryIndex == 2)
+				else if (gameItemControl.game.Status == GameStatus.NotInstalled && !gameItemControl.game.IsFavorite && categoryIndex == 2)
 				{
 					gamesBelongingToCategory.Add(gameItemControl);
 				}
