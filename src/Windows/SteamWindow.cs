@@ -179,7 +179,7 @@ public class SteamWindow
 
 		//minimize button
 		Color minimizeColor = new Color(216, 222, 211, 255);
-		Rect minimizeMouseRect = new Rect(mWidth - 29, 7, 9, 9);
+		Rect minimizeMouseRect = new Rect(mWidth - 33, 0, 15, 21);
 		if (panel.MouseX >= minimizeMouseRect.X && panel.MouseY >= minimizeMouseRect.Y && panel.MouseX <= minimizeMouseRect.X + minimizeMouseRect.Width && panel.MouseY <= minimizeMouseRect.Y + minimizeMouseRect.Height) minimizeColor = new Color(141, 146, 121, 255);
 		panel.DrawBox(mWidth - 29, 14, 7, 2, minimizeColor);
 
@@ -187,7 +187,7 @@ public class SteamWindow
 		int closeButtonX = mWidth - 15;
 		int closeButtonY = 7;
 		Color closeColor = new Color(216, 222, 211, 255);
-		Rect closeMouseRect = new Rect(mWidth - 15, 7, 9, 9);
+		Rect closeMouseRect = new Rect(mWidth - 18, 0, 15, 21);
 		if (panel.MouseX >= closeMouseRect.X && panel.MouseY >= closeMouseRect.Y && panel.MouseX <= closeMouseRect.X + closeMouseRect.Width && panel.MouseY <= closeMouseRect.Y + closeMouseRect.Height) closeColor = new Color(141, 146, 121, 255);
 		for (int i = 0; i < 8; i++)
 		{
@@ -324,8 +324,8 @@ public class SteamWindow
 					break;
 				case SDL_Sharp.EventType.MouseButtonUp:
 					//minimize button
-					Rect minimizeRect = new Rect(mWidth - 29, 7, 9, 9);
-					Rect closeRect = new Rect(mWidth - 15, 7, 9, 9);
+					Rect minimizeRect = new Rect(mWidth - 33, 0, 15, 21);
+					Rect closeRect = new Rect(mWidth - 18, 0, 15, 21);
 					if (e.Motion.X >= minimizeRect.X && e.Motion.Y >= minimizeRect.Y && e.Motion.X <= minimizeRect.X + minimizeRect.Width && e.Motion.Y <= minimizeRect.Y + minimizeRect.Height)
 					{
 						SDL.MinimizeWindow(window);
