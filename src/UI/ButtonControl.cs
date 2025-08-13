@@ -32,31 +32,25 @@ public class ButtonControl : UIControl
 			else SDL.SetRenderDrawColor(renderer, 70, 70, 70, 255);
 		}
 		Rect rect = new Rect(x + 1, y + 1, width - 2, height - 2);
-		unsafe
-		{
-			SDL.RenderFillRect(renderer, &rect);
-		}
+		SDL.RenderFillRect(renderer, ref rect);
 
 		//border
-		unsafe
+		if (style == 0)
 		{
-			if (style == 0)
-			{
-				if (mouseDown) SDL.SetRenderDrawColor(renderer, 196, 181, 80, 255);
-				else if (enabled) SDL.SetRenderDrawColor(renderer, 7, 4, 12, 255);
-				else SDL.SetRenderDrawColor(renderer, 79, 80, 79, 255);
-			}
-			else
-			{
-				if (mouseDown) SDL.SetRenderDrawColor(renderer, 196, 181, 80, 255);
-				else if (enabled) SDL.SetRenderDrawColor(renderer, 7, 4, 12, 255);
-				else SDL.SetRenderDrawColor(renderer, 53, 53, 55, 255);
-			}
-			SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
-			SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 2); // left
-			SDL.RenderDrawLine(renderer, x + 1, y + height - 1, x + width - 2, y + height - 1); // bottom
-			SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 2); // right
+			if (mouseDown) SDL.SetRenderDrawColor(renderer, 196, 181, 80, 255);
+			else if (enabled) SDL.SetRenderDrawColor(renderer, 7, 4, 12, 255);
+			else SDL.SetRenderDrawColor(renderer, 79, 80, 79, 255);
 		}
+		else
+		{
+			if (mouseDown) SDL.SetRenderDrawColor(renderer, 196, 181, 80, 255);
+			else if (enabled) SDL.SetRenderDrawColor(renderer, 7, 4, 12, 255);
+			else SDL.SetRenderDrawColor(renderer, 53, 53, 55, 255);
+		}
+		SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
+		SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 2); // left
+		SDL.RenderDrawLine(renderer, x + 1, y + height - 1, x + width - 2, y + height - 1); // bottom
+		SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 2); // right
 
 		//corners
 		if (style == 0)

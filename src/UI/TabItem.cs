@@ -29,13 +29,10 @@ public class TabItem : UIControl
 		SDL.RenderFillRect(renderer, ref rect);
 
 		//border
-		unsafe
-		{
-			SDL.SetRenderDrawColor(renderer, 116, 116, 116, 255);
-			SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
-			SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 1); // left
-			SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 1); // right
-		}
+		SDL.SetRenderDrawColor(renderer, 116, 116, 116, 255);
+		SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
+		SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 1); // left
+		SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 1); // right
 
 		//corners
 		if (!selected)

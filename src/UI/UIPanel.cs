@@ -114,11 +114,8 @@ public class UIPanel
 	public void DrawBox(int x, int y, int width, int height, Color color)
 	{
 		SDL.SetRenderDrawColor(window.renderer, color.R, color.G, color.B, color.A);
-		unsafe
-		{
-			Rect rect = new Rect(x, y, width, height);
-			SDL.RenderFillRect(window.renderer, &rect);
-		}
+		Rect rect = new Rect(x, y, width, height);
+		SDL.RenderFillRect(window.renderer, ref rect);
 	}
 
 	public void AddControl(UIControl control)

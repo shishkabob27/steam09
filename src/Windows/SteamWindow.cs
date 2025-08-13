@@ -151,18 +151,12 @@ public class SteamWindow
 		//draw window content
 		SDL.SetRenderDrawColor(renderer, 70, 70, 70, 255);
 		Rect contentRect = new Rect(0, 0, mWidth, mHeight);
-		unsafe
-		{
-			SDL.RenderFillRect(renderer, &contentRect);
-		}
+		SDL.RenderFillRect(renderer, ref contentRect);
 
 		//draw window border
 		SDL.SetRenderDrawColor(renderer, 104, 106, 101, 255);
 		Rect borderRect = new Rect(0, 0, mWidth, mHeight);
-		unsafe
-		{
-			SDL.RenderDrawRect(renderer, &borderRect);
-		}
+		SDL.RenderDrawRect(renderer, ref borderRect);
 
 		//draw window title bar
 		panel.DrawBox(0, 0, mWidth, 21, new Color(90, 106, 80, 255));
