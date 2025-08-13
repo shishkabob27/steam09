@@ -44,7 +44,7 @@ public class SteamWindow
 
 		if (isPopupWindow)
 		{
-			windowFlags |= WindowFlags.PopupMenu;
+			windowFlags |= WindowFlags.SkipTaskbar;
 		}
 
 		window = SDL.CreateWindow(title, SDL.WINDOWPOS_UNDEFINED, SDL.WINDOWPOS_UNDEFINED, width, height, windowFlags);
