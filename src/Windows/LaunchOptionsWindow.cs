@@ -13,8 +13,8 @@ public class LaunchOptionsWindow : SteamWindow
 
 	public LaunchOptionsWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
 	{
-		launchButton = new ButtonControl(panel, renderer, "launchbutton", 0, 0, 98, 24, "Launch", 1);
-		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 98, 24, "Cancel", 1);
+		launchButton = new ButtonControl(panel, renderer, "launchbutton", 0, 0, 98, 24, Localization.GetString("Steam_Launch"), 1);
+		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 98, 24, Localization.GetString("vgui_Cancel"), 1);
 		panel.AddControl(launchButton);
 		panel.AddControl(cancelButton);
 

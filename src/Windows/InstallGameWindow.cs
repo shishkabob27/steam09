@@ -15,9 +15,9 @@ public class InstallGameWindow : SteamWindow
 
 	public InstallGameWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
 	{
-		backButton = new ButtonControl(panel, renderer, "backbutton", 0, 0, 72, 24, "< Back", 1);
-		installButton = new ButtonControl(panel, renderer, "installbutton", 0, 0, 72, 24, "Install", 1);
-		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 72, 24, "Cancel", 1);
+		backButton = new ButtonControl(panel, renderer, "backbutton", 0, 0, 72, 24, Localization.GetString("WizardPanel_Back"), 1);
+		installButton = new ButtonControl(panel, renderer, "installbutton", 0, 0, 72, 24, Localization.GetString("Steam_Install"), 1);
+		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 72, 24, Localization.GetString("vgui_Cancel"), 1);
 		panel.AddControl(backButton);
 		panel.AddControl(installButton);
 		panel.AddControl(cancelButton);
@@ -81,7 +81,7 @@ public class InstallGameWindow : SteamWindow
 		panel.DrawBox(10, 30, mWidth - 20, mHeight - 72, new Color(101, 106, 98, 255));
 
 		installButton.Draw();
-		installButton.text = screen == 0 ? "Next >" : "Install";
+		installButton.text = screen == 0 ? Localization.GetString("WizardPanel_Next") : Localization.GetString("Steam_Install");
 
 		cancelButton.Draw();
 
@@ -90,10 +90,10 @@ public class InstallGameWindow : SteamWindow
 		if (screen == 0)
 		{
 			//draw info screen
-			panel.DrawText($"You are about to install {game.Name}.", 30, 56, new Color(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_InstallGameInfo").Replace("%game%", game.Name), 30, 56, new Color(255, 255, 255, 255));
 
-			panel.DrawText($"Disk space required:", 30, 120, new Color(255, 255, 255, 255));
-			panel.DrawText($"Disk space available:", 30, 145, new Color(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceRequired"), 30, 120, new Color(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceAvailable"), 30, 145, new Color(255, 255, 255, 255));
 
 			panel.DrawText($"{gameSize} MB", (mWidth / 2) + 10, 120, new Color(255, 255, 255, 255));
 			panel.DrawText($"{diskSpaceAvailable} MB", (mWidth / 2) + 10, 145, new Color(255, 255, 255, 255));

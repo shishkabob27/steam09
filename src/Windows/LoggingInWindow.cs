@@ -15,7 +15,7 @@ public class LoggingInWindow : SteamWindow
 	{
 		base.Draw();
 
-		panel.DrawText($"Connecting Steam account: {steam.CurrentUser.AccountName}...", 30, 52, new Color(255, 255, 255, 255));
+		panel.DrawText(Localization.GetString("Steam_LaunchingSteam").Replace("%s1", steam.CurrentUser.AccountName), 30, 52, new Color(255, 255, 255, 255));
 
 		SDL.RenderPresent(renderer);
 	}

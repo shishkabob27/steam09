@@ -110,7 +110,7 @@ public partial class Steam
 			return;
 		}
 
-		LaunchOptionsWindow launchOptionsWindow = new LaunchOptionsWindow(this, $"{game.Name} - Steam", 400, 200);
+		LaunchOptionsWindow launchOptionsWindow = new LaunchOptionsWindow(this, Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name), 400, 200);
 		launchOptionsWindow.SetGame(game);
 		launchOptionsWindow.SetLaunchConfigs(launchConfigs);
 		PendingWindows.Add(launchOptionsWindow);
@@ -118,7 +118,7 @@ public partial class Steam
 
 	public void BeginLaunchGame(Game game, Tuple<string, string, string> launchConfig)
 	{
-		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, $"{game.Name} - Steam", 400, 200);
+		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name), 400, 200);
 		preparingToLaunchWindow.SetGame(game);
 		preparingToLaunchWindow.SetLaunchConfig(launchConfig);
 		PendingWindows.Add(preparingToLaunchWindow);

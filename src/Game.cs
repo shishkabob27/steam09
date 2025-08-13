@@ -20,11 +20,11 @@ public class Game
 		switch (Status)
 		{
 			case GameStatus.NotInstalled:
-				return "Not installed";
+				return Localization.GetString("Steam_NotInstalled");
 			case GameStatus.Downloading:
 				return "Downloading: " + InstallProgress.ToString("F0") + "%";
 			case GameStatus.Installed:
-				return "100% - Ready";
+				return Localization.GetString("Steam_GameReady");
 			case GameStatus.UpdatePending:
 				return "Update pending";
 		}
@@ -165,7 +165,7 @@ public class Game
 				//check if the executable exists
 				if (launch["executable"] == null) continue;
 
-				launchConfigs.Add(new Tuple<string, string, string>(launch["executable"].ToString(), launch["arguments"]?.ToString() ?? "", launch["description"]?.ToString() ?? $"Play {Name}"));
+				launchConfigs.Add(new Tuple<string, string, string>(launch["executable"].ToString(), launch["arguments"]?.ToString() ?? "", launch["description"]?.ToString() ?? Localization.GetString("Steam_LaunchOption_Game").Replace("%game%", Name)));
 			}
 			catch (Exception e)
 			{
@@ -194,7 +194,7 @@ public class Game
 	{
 		if (AppInfo == null)
 		{
-			return "[ none available ]";
+			return Localization.GetString("Steam_Game_NoManual");
 		}
 
 		JToken homepage = AppInfo["extended"]?["homepage"];
@@ -207,16 +207,16 @@ public class Game
 	{
 		if (AppInfo == null)
 		{
-			return new Tuple<string, string>("[ none available ]", "");
+			return new Tuple<string, string>(Localization.GetString("Steam_Game_NoManual"), "");
 		}
 
 		JToken manualUrl = AppInfo["extended"]?["gamemanualurl"];
 
 		if (manualUrl == null || manualUrl.ToString() == "null")
 		{
-			return new Tuple<string, string>("[ none available ]", "");
+			return new Tuple<string, string>(Localization.GetString("Steam_Game_NoManual"), "");
 		}
 
-		return new Tuple<string, string>($"{Name} manual", manualUrl.ToString());
+		return new Tuple<string, string>(Localization.GetString("Steam_Game_DefaultManual").Replace("%game%", Name), manualUrl.ToString());
 	}
 }

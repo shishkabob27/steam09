@@ -30,15 +30,15 @@ public class LoginWindow : SteamWindow
 			isPassword = true
 		};
 
-		RememberPasswordButton = new(panel, renderer, "RememberPasswordButton", 118, 132, text: "Remember my password");
+		RememberPasswordButton = new(panel, renderer, "RememberPasswordButton", 118, 132, text: Localization.GetString("Steam_Login_RememberPassword"));
 
-		LoginButton = new(panel, renderer, "LoginButton", 120, 164, 80, 24, "Login", 1);
-		CancelButton = new(panel, renderer, "CancelButton", 205, 164, 84, 24, "Cancel", 1);
+		LoginButton = new(panel, renderer, "LoginButton", 120, 164, 80, 24, Localization.GetString("Steam_Login_Btn"), 1);
+		CancelButton = new(panel, renderer, "CancelButton", 205, 164, 84, 24, Localization.GetString("vgui_Cancel"), 1);
 
 		divider = new(panel, renderer, "Divider", 20, 202, 380, 3);
 
-		CreateNewAccountButton = new(panel, renderer, "CreateNewAccountButton", 228, 220, 174, 24, "Create a new account...", 1);
-		LostPasswordButton = new(panel, renderer, "LostPasswordButton", 228, 252, 174, 24, "Retrieve a lost account...", 1);
+		CreateNewAccountButton = new(panel, renderer, "CreateNewAccountButton", 228, 220, 174, 24, Localization.GetString("Steam_Login_CreateNewAccount"), 1);
+		LostPasswordButton = new(panel, renderer, "LostPasswordButton", 228, 252, 174, 24, Localization.GetString("Steam_Login_RetrievePassword"), 1);
 
 		CreateNewAccountButton.OnClick += () =>
 		{
@@ -90,11 +90,11 @@ public class LoginWindow : SteamWindow
 		CreateNewAccountButton.Draw();
 		LostPasswordButton.Draw();
 
-		panel.DrawText("Account name", 112, 74, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
-		panel.DrawText("Password", 112, 108, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
+		panel.DrawText(Localization.GetString("Steam_AccountName"), 112, 74, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
+		panel.DrawText(Localization.GetString("Steam_Login_Password"), 112, 108, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
 
-		panel.DrawText("Don't have a Steam account?", 220, 228, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
-		panel.DrawText("Forgot your login info?", 220, 260, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
+		panel.DrawText(Localization.GetString("Steam_Login_NoAccount"), 220, 228, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
+		panel.DrawText(Localization.GetString("Steam_Login_ForgotPassword"), 220, 260, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
 
 		SDL.RenderPresent(renderer);
 	}

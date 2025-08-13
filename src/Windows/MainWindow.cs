@@ -80,9 +80,9 @@ public class MainWindow : SteamWindow
 		TabList = new TabList(panel, renderer, "tablist", 1, 68);
 		panel.AddControl(TabList);
 
-		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_store", 0, 0, 66, 22, "Store", TabList));
+		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_store", 0, 0, 66, 22, Localization.GetString("Steam_Store_TabTitle"), TabList));
 		//TabList.Children.Add(new TabItem(panel, renderer, "tabitem_community", 0, 0, 71, 22, "Community", TabList));
-		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_mygames", 0, 0, 66, 22, "My games", TabList));
+		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_mygames", 0, 0, 66, 22, Localization.GetString("Steam_MyGames_TabTitle"), TabList));
 
 		TabList.SetTabSelected("tabitem_mygames", true);
 
@@ -260,19 +260,19 @@ public class MainWindow : SteamWindow
 
 		//Draw bottom buttons
 		NewsButton.Draw();
-		panel.DrawText("News", 71, mHeight - 27, new Color(143, 146, 141, 255));
+		panel.DrawText(Localization.GetString("Steam_News"), 71, mHeight - 27, new Color(143, 146, 141, 255));
 
 		FriendsButton.Draw();
-		panel.DrawText("Friends", 179, mHeight - 27, new Color(143, 146, 141, 255));
+		panel.DrawText(Localization.GetString("Steam_Friends"), 179, mHeight - 27, new Color(143, 146, 141, 255));
 
 		ServersButton.Draw();
-		panel.DrawText("Servers", 299, mHeight - 27, new Color(143, 146, 141, 255));
+		panel.DrawText(Localization.GetString("Steam_Servers"), 299, mHeight - 27, new Color(143, 146, 141, 255));
 
 		SettingsButton.Draw();
-		panel.DrawText("Settings", 417, mHeight - 27, new Color(143, 146, 141, 255));
+		panel.DrawText(Localization.GetString("Steam_Settings"), 417, mHeight - 27, new Color(143, 146, 141, 255));
 
 		SupportButton.Draw();
-		panel.DrawText("Support", 538, mHeight - 27, new Color(143, 146, 141, 255));
+		panel.DrawText(Localization.GetString("Steam_Support"), 538, mHeight - 27, new Color(143, 146, 141, 255));
 
 		SDL.RenderPresent(renderer);
 	}
@@ -293,9 +293,9 @@ public class MainWindow : SteamWindow
 
 		//game list table names
 		{
-			panel.DrawText("Games", 53, 73, new Color(216, 222, 211, 255), fontSize: 7);
-			panel.DrawText("Status", (mWidth / 2) - 24, 73, new Color(216, 222, 211, 255), fontSize: 7);
-			panel.DrawText("Developer", mWidth - 250, 73, new Color(216, 222, 211, 255), fontSize: 7);
+			panel.DrawText(Localization.GetString("Steam_GamesColumn"), 53, 73, new Color(216, 222, 211, 255), fontSize: 7);
+			panel.DrawText(Localization.GetString("Steam_StatusColumn"), (mWidth / 2) - 24, 73, new Color(216, 222, 211, 255), fontSize: 7);
+			panel.DrawText(Localization.GetString("Steam_DeveloperColumn"), mWidth - 250, 73, new Color(216, 222, 211, 255), fontSize: 7);
 		}
 
 		//fit buttons to width of window
@@ -320,16 +320,16 @@ public class MainWindow : SteamWindow
 				switch (game.Status)
 				{
 					case GameStatus.Installed:
-						GameActionButton.text = "Launch";
+						GameActionButton.text = Localization.GetString("Steam_Launch");
 						break;
 					case GameStatus.UpdatePending:
-						GameActionButton.text = "Update";
+						GameActionButton.text = Localization.GetString("Steam_UpdateColumn");
 						break;
 					case GameStatus.NotInstalled:
-						GameActionButton.text = "Install";
+						GameActionButton.text = Localization.GetString("Steam_Install");
 						break;
 					default:
-						GameActionButton.text = "Launch";
+						GameActionButton.text = Localization.GetString("Steam_Launch");
 						break;
 				}
 			}
@@ -422,21 +422,21 @@ public class MainWindow : SteamWindow
 		gameList.Clear(false);
 
 		//create favorites category
-		CreateGameCategory("MY FAVORITES", 0, catagoryOpenState.ContainsKey(0) ? catagoryOpenState[0] : true);
+		CreateGameCategory(Localization.GetString("Steam_GamesSection_Favorites"), 0, catagoryOpenState.ContainsKey(0) ? catagoryOpenState[0] : true);
 		foreach (var game in steam.Games.Where(g => g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create categories first
-		CreateGameCategory("INSTALLED", 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
+		CreateGameCategory(Localization.GetString("Steam_GamesSection_Installed"), 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
 		foreach (var game in steam.Games.Where(g => (g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending) && !g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
 		}
 
 		// create not installed category
-		CreateGameCategory("NOT INSTALLED", 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
+		CreateGameCategory(Localization.GetString("Steam_GamesSection_NotInstalled"), 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
 		foreach (var game in steam.Games.Where(g => g.Status == GameStatus.NotInstalled && !g.IsFavorite).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game);
@@ -477,11 +477,11 @@ public class MainWindow : SteamWindow
 	void CreateControls()
 	{
 		//these button's positions are relative to the window
-		GameActionButton = new ButtonControl(panel, renderer, "gameactionbutton", 0, 0, 98, 24, "Launch");
+		GameActionButton = new ButtonControl(panel, renderer, "gameactionbutton", 0, 0, 98, 24, Localization.GetString("Steam_Launch"));
 		panel.AddControl(GameActionButton);
 		GameActionButton.OnClick = () => OnGameAction(selectedGameID);
 
-		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, "Properties");
+		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, Localization.GetString("Steam_Properties"));
 		panel.AddControl(PropertiesButton);
 		PropertiesButton.OnClick = () =>
 		{
@@ -535,12 +535,12 @@ public class MainWindow : SteamWindow
 			gameItemControl.OnClick();
 
 			PopupMenuWindow popupMenuWindow = new PopupMenuWindow(steam, $"Game Actions - {game.Name}", 120, 0);
-			popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? "Launch game..." : "Install game...", () =>
+			popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? Localization.GetString("SteamUI_GamesDialog_RightClick_LaunchGames") : Localization.GetString("SteamUI_GamesDialog_RightClick_InstallGame"), () =>
 			{
 				OnGameAction(game.AppID);
 			});
 			popupMenuWindow.AddSeparator();
-			popupMenuWindow.AddItem("Properties", () =>
+			popupMenuWindow.AddItem(Localization.GetString("Steam_Properties"), () =>
 			{
 				Game game = steam.Games.Find(x => x.AppID == gameItemControl.game.AppID);
 				if (game == null) return;
@@ -562,7 +562,7 @@ public class MainWindow : SteamWindow
 
 		if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.UpdatePending)
 		{
-			InstallGameWindow installGameWindow = new InstallGameWindow(steam, $"Install {game.Name}", 450, 460);
+			InstallGameWindow installGameWindow = new InstallGameWindow(steam, $"{Localization.GetString("Steam_InstallAppWizard_Title").Replace("%game%", game.Name)}", 450, 460);
 			installGameWindow.SetGame(game);
 			steam.PendingWindows.Add(installGameWindow);
 		}

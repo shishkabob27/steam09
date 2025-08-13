@@ -80,6 +80,8 @@ public partial class Steam
 		steamCloud = steamClient.GetHandler<SteamCloud>();
 		steamPublishedFile = steamClient.GetHandler<SteamUnifiedMessages>().CreateService<PublishedFile>();
 
+		Localization.Initialize("en");
+
 		//if no cached login, show login window
 		if (!AttemptCachedLogin())
 		{
@@ -209,7 +211,7 @@ public partial class Steam
 
 		if (loginWindowState == 1)
 		{
-			PendingWindows.Add(new LoginWindow(this, "STEAM - Login", 420, 300, false));
+			PendingWindows.Add(new LoginWindow(this, Localization.GetString("Steam_Login_Title"), 420, 300, false));
 			loginWindowState = 2;
 		}
 
@@ -225,7 +227,7 @@ public partial class Steam
 			}
 
 			//create main window
-			PendingWindows.Add(new MainWindow(this, $"STEAM - {CurrentUser.AccountName}", 1000, 660, true, 640, 480));
+			PendingWindows.Add(new MainWindow(this, Localization.GetString("Steam_Root_Title").Replace("%account%", CurrentUser.AccountName), 1000, 660, true, 640, 480));
 			mainwindowState = 2;
 		}
 

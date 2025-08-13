@@ -39,7 +39,8 @@ public class PreparingToLaunchWindow : SteamWindow
 	{
 		base.Draw();
 
-		panel.DrawText($"Preparing to launch {game.Name}...", 28, 48, new Color(230, 236, 224, 255));
+		int stage = (int)Math.Min((time * 3) + 1, 3);
+		panel.DrawText(Localization.GetString($"SteamUI_JoinDialog_PreparingToPlay{stage}").Replace("%s1", game.Name), 28, 48, new Color(230, 236, 224, 255));
 
 		SDL.RenderPresent(renderer);
 	}
