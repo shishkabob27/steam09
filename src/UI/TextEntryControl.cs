@@ -153,7 +153,14 @@ public class TextEntryControl : UIControl
 			{
 				if (modifier.HasFlag(KeyModifier.Ctrl) || modifier.HasFlag(KeyModifier.RightCtrl) || modifier.HasFlag(KeyModifier.LeftCtrl))
 				{
-					if (key == Keycode.V) InsertText(SDL.GetClipboardText());
+					if (key == Keycode.V)
+					{
+						InsertText(SDL.GetClipboardText());
+						if (cursorPosition > maxLength)
+						{
+							cursorPosition = maxLength;
+						}
+					}
 					else if (key == Keycode.A)
 					{
 						isSelecting = true;
@@ -243,21 +250,16 @@ public class TextEntryControl : UIControl
 		if (enabled) SDL.SetRenderDrawColor(renderer, 85, 85, 85, 255);
 		else SDL.SetRenderDrawColor(renderer, 80, 80, 80, 255);
 		Rect rect = new Rect(x + 1, y + 1, width - 2, height - 2);
-		unsafe
-		{
-			SDL.RenderFillRect(renderer, &rect);
-		}
+		SDL.RenderFillRect(renderer, ref rect);
 
 		//border
-		unsafe
-		{
-			if (enabled) SDL.SetRenderDrawColor(renderer, 20, 20, 20, 255);
-			else SDL.SetRenderDrawColor(renderer, 56, 56, 56, 255);
-			SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
-			SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 2); // left
-			SDL.RenderDrawLine(renderer, x + 1, y + height - 1, x + width - 2, y + height - 1); // bottom
-			SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 2); // right
-		}
+		if (enabled) SDL.SetRenderDrawColor(renderer, 20, 20, 20, 255);
+		else SDL.SetRenderDrawColor(renderer, 56, 56, 56, 255);
+		SDL.RenderDrawLine(renderer, x + 1, y, x + width - 2, y); // top
+		SDL.RenderDrawLine(renderer, x, y + 1, x, y + height - 2); // left
+		SDL.RenderDrawLine(renderer, x + 1, y + height - 1, x + width - 2, y + height - 1); // bottom
+		SDL.RenderDrawLine(renderer, x + width - 1, y + 1, x + width - 1, y + height - 2); // right
+	
 
 		//corners
 		if (enabled) SDL.SetRenderDrawColor(renderer, 65, 66, 66, 255);
@@ -276,7 +278,7 @@ public class TextEntryControl : UIControl
 		//selection
 		if (isSelecting && text.Length > 0)
 		{
-			SDL.SetRenderDrawColor(renderer, 10, 10, 70, 255);
+			SDL.SetRenderDrawColor(renderer, 196, 181, 80, 255);
 
 			//measure text
 			int smallerIndex = Math.Min(selectionStart, selectionEnd);
