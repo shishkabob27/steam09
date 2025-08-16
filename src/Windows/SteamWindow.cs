@@ -191,7 +191,7 @@ public class SteamWindow
 
 		foreach (var control in panel.controls)
 		{
-			control.Draw();
+			if (control.visible) control.Draw();
 		}
 	}
 
