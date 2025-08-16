@@ -17,6 +17,12 @@ public static class Localization
 
 	public static string GetString(string key)
 	{
+		//check if key is a localization key
+		if (key.StartsWith("#"))
+		{
+			key = key.Remove(0, 1);
+		}
+
 		if (Strings.ContainsKey(key))
 		{
 			return Strings[key];

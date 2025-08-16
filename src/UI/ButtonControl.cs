@@ -6,7 +6,7 @@ public class ButtonControl : UIControl
 
 	public ButtonControl(UIPanel parent, Renderer renderer, string controlName, int x, int y, int width = 0, int height = 0, string text = "", int style = 0) : base(parent, renderer, controlName, x, y, width, height)
 	{
-		this.text = text;
+		this.text = Localization.GetString(text);
 		this.style = style;
 
 		//double clicking a button should still trigger a click event
