@@ -43,11 +43,17 @@ public class ListControl : UIControl
 
 		scrollbarButtonUp.OnClick += () =>
 		{
-			scroll -= 40;
+			if (enabled)
+			{
+				scroll -= 40;
+			}
 		};
 		scrollbarButtonDown.OnClick += () =>
 		{
-			scroll += 40;
+			if (enabled)
+			{
+				scroll += 40;
+			}
 		};
 
 		parent.AddControl(scrollbarControl);
@@ -201,6 +207,7 @@ public class ListControl : UIControl
 		//draw children
 		foreach (var child in Children)
 		{
+			child.ManualDraw = true;
 			child.Draw();
 		}
 

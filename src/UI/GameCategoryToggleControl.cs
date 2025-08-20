@@ -18,14 +18,20 @@ public class GameCategoryToggleControl : UIControl
 
 		OnClick = () =>
 		{
-			Open = !Open;
-			UpdateGameVisibility();
+			if (enabled)
+			{
+				Open = !Open;
+				UpdateGameVisibility();
+			}
 		};
 
 		OnDoubleClick = () =>
 		{
-			Open = !Open;
-			UpdateGameVisibility();
+			if (enabled)
+			{
+				Open = !Open;
+				UpdateGameVisibility();
+			}
 		};
 	}
 

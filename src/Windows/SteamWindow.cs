@@ -189,9 +189,9 @@ public class SteamWindow
 			panel.DrawBox(closeButtonX + 7 - i, closeButtonY + i, 2, 2, closeColor);
 		}
 
-		foreach (var control in panel.controls)
+		foreach (var control in panel.controls.OrderBy(c => c.zIndex))
 		{
-			if (control.visible) control.Draw();
+			if (control.visible && !control.ManualDraw) control.Draw();
 		}
 	}
 

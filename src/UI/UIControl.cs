@@ -11,11 +11,14 @@ public class UIControl
 
 	public int x;
 	public int y;
+	public int zIndex = 0;
 	public int width;
 	public int height;
 
 	//if false, mouse events will not be sent to this control, except for scroll events
 	public bool acceptMouseButtons = true;
+
+	public bool ManualDraw = false;
 
 	public bool visible = true;
 	public bool enabled = true;
@@ -45,7 +48,6 @@ public class UIControl
 
 	public virtual void Draw()
 	{
-		if (!visible) return;
 	}
 
 	public Action OnClick;

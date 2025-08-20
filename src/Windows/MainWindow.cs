@@ -36,6 +36,9 @@ public class MainWindow : SteamWindow
 	public bool ReloadGameList = true; // reload on startup
 	Dictionary<int, bool> catagoryOpenState; // Catagory index, open state
 
+	SolidBackgroundControl topBarBackground;
+	SolidBackgroundControl GameListBackground;
+
 	public MainWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
 	{
 		unsafe
@@ -93,6 +96,11 @@ public class MainWindow : SteamWindow
 			panel.AddControl(tabItem);
 		}
 
+		//top bar background
+		topBarBackground = new SolidBackgroundControl(panel, renderer, "topbarbackground", 0, 68, mWidth, 22, new Color(104, 106, 101, 255));
+		topBarBackground.zIndex = 1;
+		panel.AddControl(topBarBackground);
+
 		//browser controls
 		{
 			BackButton = new BrowserButtonControl(panel, renderer, "backbutton", 13, 82, 16, 16, 0);
@@ -137,6 +145,11 @@ public class MainWindow : SteamWindow
 
 		//game list
 		{
+			//background
+			GameListBackground = new SolidBackgroundControl(panel, renderer, "gamelistbackground", 1, 90, mWidth - 2, mHeight - 117 - 90, new Color(73, 78, 73, 255));
+			GameListBackground.zIndex = -2;
+			panel.AddControl(GameListBackground);
+
 			gameList = new ListControl(panel, renderer, "gamelist", 1, 90, mWidth - 2, mHeight - 117 - 90);
 			panel.AddControl(gameList);
 		}
@@ -211,16 +224,37 @@ public class MainWindow : SteamWindow
 			browser.Update();
 
 			//enable browser controls
+			BackButton.visible = true;
+			ForwardButton.visible = true;
+			ReloadButton.visible = true;
+			StopButton.visible = true;
+			HomeButton.visible = true;
+
 			ReloadButton.enabled = true;
 			StopButton.enabled = true;
 			HomeButton.enabled = true;
 
 			BackButton.enabled = browser.CanGoBack();
 			ForwardButton.enabled = browser.CanGoForward();
+
+			topBarBackground.width = mWidth;
+			topBarBackground.height = 43;
+
+			gameList.enabled = false;
+			foreach (var child in gameList.Children)
+			{
+				child.enabled = false;
+			}
 		}
 		else
 		{
 			//disable browser controls
+			BackButton.visible = false;
+			ForwardButton.visible = false;
+			ReloadButton.visible = false;
+			StopButton.visible = false;
+			HomeButton.visible = false;
+
 			BackButton.enabled = false;
 			ForwardButton.enabled = false;
 			ReloadButton.enabled = false;
@@ -230,6 +264,17 @@ public class MainWindow : SteamWindow
 			//resize game list
 			gameList.width = mWidth - 2;
 			gameList.height = mHeight - 117 - 90;
+			gameList.enabled = true;
+			foreach (var child in gameList.Children)
+			{
+				child.enabled = true;
+			}
+
+			topBarBackground.width = mWidth;
+			topBarBackground.height = 22;
+
+			GameListBackground.width = mWidth - 2;
+			GameListBackground.height = mHeight - 117 - 90;
 		}
 
 		//move bottom buttons to bottom
@@ -244,8 +289,6 @@ public class MainWindow : SteamWindow
 	{
 		base.Draw();
 
-		TabList.Draw();
-
 		if (!inBrowserWindow)
 		{
 			GameListDraw();
@@ -259,19 +302,10 @@ public class MainWindow : SteamWindow
 		panel.DrawTexture(ResizeTexture, mWidth - 23, mHeight - 23);
 
 		//Draw bottom buttons
-		NewsButton.Draw();
 		panel.DrawText(Localization.GetString("Steam_News"), 71, mHeight - 27, new Color(143, 146, 141, 255));
-
-		FriendsButton.Draw();
 		panel.DrawText(Localization.GetString("Steam_Friends"), 179, mHeight - 27, new Color(143, 146, 141, 255));
-
-		ServersButton.Draw();
 		panel.DrawText(Localization.GetString("Steam_Servers"), 299, mHeight - 27, new Color(143, 146, 141, 255));
-
-		SettingsButton.Draw();
 		panel.DrawText(Localization.GetString("Steam_Settings"), 417, mHeight - 27, new Color(143, 146, 141, 255));
-
-		SupportButton.Draw();
 		panel.DrawText(Localization.GetString("Steam_Support"), 538, mHeight - 27, new Color(143, 146, 141, 255));
 
 		SDL.RenderPresent(renderer);
@@ -279,15 +313,8 @@ public class MainWindow : SteamWindow
 
 	public void GameListDraw()
 	{
-
-		//draw catagory list
-		//background
-		panel.DrawBox(1, 90, mWidth - 2, mHeight - 117 - 90, new Color(73, 78, 73, 255));
-		gameList.Draw();
-
 		//bars
 		{
-			panel.DrawBox(0, 68, mWidth, 22, new Color(104, 106, 101, 255));
 			panel.DrawBox(0, mHeight - 117, mWidth, 39, new Color(104, 106, 101, 255));
 		}
 
@@ -333,23 +360,11 @@ public class MainWindow : SteamWindow
 						break;
 				}
 			}
-
-			GameActionButton.Draw();
-			PropertiesButton.Draw();
 		}
 	}
 
 	public void BrowserDraw()
 	{
-		//top bar
-		panel.DrawBox(0, 68, mWidth, 43, new Color(104, 106, 101, 255));
-
-		BackButton.Draw();
-		ForwardButton.Draw();
-		ReloadButton.Draw();
-		StopButton.Draw();
-		HomeButton.Draw();
-
 		Rect browserRect = new(1, 111, mWidth - 2, mHeight - 111 - 79);
 		browser.Draw(renderer, browserRect);
 	}

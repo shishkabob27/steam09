@@ -8,6 +8,7 @@ public class BrowserButtonControl : ButtonControl
 	public BrowserButtonControl(UIPanel parent, Renderer renderer, string controlName, int x, int y, int width = 0, int height = 0, int index = 0) : base(parent, renderer, controlName, x, y, width, height)
 	{
 		this.index = index;
+		zIndex = 2;
 	}
 
 	public override void Draw()

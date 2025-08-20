@@ -250,6 +250,8 @@ public class UIPanel
 		{
 			foreach (UIControl control in controls)
 			{
+				if (control.enabled == false) continue;
+
 				if (control.mouseOver)
 				{
 					control.OnScroll?.Invoke(e.Wheel.Y);
