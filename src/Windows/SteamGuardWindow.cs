@@ -53,6 +53,8 @@ public class SteamGuardWindow : SteamWindow
 		// Hide code entry controls
 		enterButton.enabled = false;
 		codeEdit.enabled = false;
+		enterButton.visible = false;
+		codeEdit.visible = false;
 	}
 
 	private void SetCodeEntryMode()
@@ -61,6 +63,8 @@ public class SteamGuardWindow : SteamWindow
 
 		enterButton.enabled = false;
 		codeEdit.enabled = true;
+		enterButton.visible = true;
+		codeEdit.visible = true;
 	}
 
 	public override void Update(float deltaTime)
@@ -82,14 +86,6 @@ public class SteamGuardWindow : SteamWindow
 		base.Draw();
 
 		panel.DrawText(promptText, 28, 48, new Color(230, 236, 224, 255));
-
-		if (!isConfirmationMode)
-		{
-			if (codeEdit.enabled)
-				codeEdit.Draw();
-			if (enterButton.enabled)
-				enterButton.Draw();
-		}
 
 		SDL.RenderPresent(renderer);
 	}

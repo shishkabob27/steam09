@@ -48,10 +48,6 @@ public class RequestWebAPIKeyWindow : SteamWindow
 
 		panel.DrawText("Please enter your Steam Web API key", 28, 48, new Color(230, 236, 224, 255));
 
-		webApiKeyEdit.Draw();
-		enterButton.Draw();
-		retrieveButton.Draw();
-
 		SDL.RenderPresent(renderer);
 	}
 

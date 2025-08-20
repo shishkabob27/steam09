@@ -1,4 +1,8 @@
 //Holds and manages UIControls
+using System.Diagnostics;
+using System.Xml;
+using Gameloop.Vdf;
+using Gameloop.Vdf.Linq;
 using SDL_Sharp;
 using SDL_Sharp.Image;
 using SDL_Sharp.Ttf;
@@ -246,11 +250,76 @@ public class UIPanel
 		{
 			foreach (UIControl control in controls)
 			{
+				if (control.enabled == false) continue;
+
 				if (control.mouseOver)
 				{
 					control.OnScroll?.Invoke(e.Wheel.Y);
 				}
 			}
+		}
+	}
+
+	public T GetControl<T>(string name) where T : UIControl
+	{
+		foreach (UIControl control in controls)
+		{
+			if (control.ControlName == name)
+			{
+				return control as T;
+			}
+		}
+
+		return null;
+	}
+
+	public void LoadUILayout(string path)
+	{
+		controls.Clear();
+
+		path = "resources/ui/" + path;
+
+		string vdf = File.ReadAllText(path);
+
+		//parse res file
+		VProperty root = VdfConvert.Deserialize(vdf);
+
+		foreach (VProperty control in root.Value.Children())
+		{
+			UIControl? newControl = null;
+
+			switch (control.Value["ControlName"].ToString())
+			{
+				case "Label":
+					FontAlignment alignment;
+					if (control.Value["textAlignment"].ToString() == "west") alignment = FontAlignment.Left;
+					else if (control.Value["textAlignment"].ToString() == "east") alignment = FontAlignment.Right;
+					else alignment = FontAlignment.Center;
+					newControl = new LabelControl(this, window.renderer, control.Value["fieldName"].ToString(), control.Value["xpos"].Value<int>(), control.Value["ypos"].Value<int>(), control.Value["wide"].Value<int>(), control.Value["tall"].Value<int>(), control.Value["labelText"].ToString(), alignment);
+					break;
+				case "Button":
+					newControl = new ButtonControl(this, window.renderer, control.Value["fieldName"].ToString(), control.Value["xpos"].Value<int>(), control.Value["ypos"].Value<int>(), control.Value["wide"].Value<int>(), control.Value["tall"].Value<int>(), control.Value["labelText"].ToString(), 0);
+					break;
+				case "TextEntry":
+					newControl = new TextEntryControl(this, window.renderer, control.Value["fieldName"].ToString(), control.Value["xpos"].Value<int>(), control.Value["ypos"].Value<int>(), control.Value["wide"].Value<int>(), control.Value["tall"].Value<int>());
+					(newControl as TextEntryControl).maxLength = control.Value["maxchars"].Value<int>();
+					(newControl as TextEntryControl).isPassword = control.Value["textHidden"].ToString() == "1";
+					break;
+				case "CheckButton":
+					newControl = new CheckButtonControl(this, window.renderer, control.Value["fieldName"].ToString(), control.Value["xpos"].Value<int>(), control.Value["ypos"].Value<int>(), control.Value["wide"].Value<int>(), control.Value["tall"].Value<int>(), control.Value["labelText"].ToString());
+					break;
+				case "Divider":
+					newControl = new DividerControl(this, window.renderer, control.Value["fieldName"].ToString(), control.Value["xpos"].Value<int>(), control.Value["ypos"].Value<int>(), control.Value["wide"].Value<int>(), control.Value["tall"].Value<int>());
+					break;
+			}
+
+			if (newControl == null)
+			{
+				Console.WriteLine("Unknown control: " + control.Value["ControlName"].ToString());
+				continue;
+			}
+
+			AddControl(newControl);
 		}
 	}
 }

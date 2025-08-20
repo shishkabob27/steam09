@@ -10,8 +10,8 @@ public class CheckButtonControl : UIControl
 	{
 		this.width = 22;
 		this.height = 22;
-		this.text = text;
-		this.width = 22 + 25 + parent.steamFont8.MeasureText(text);
+		this.text = Localization.GetString(text);
+		this.width = 22 + 25 + parent.steamFont8.MeasureText(this.text);
 
 		OnClick += () =>
 		{

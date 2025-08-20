@@ -13,8 +13,6 @@ public class LoginWindow : SteamWindow
 	ButtonControl LoginButton;
 	ButtonControl CancelButton;
 
-	DividerControl divider;
-
 	ButtonControl CreateNewAccountButton;
 	ButtonControl LostPasswordButton;
 
@@ -24,52 +22,30 @@ public class LoginWindow : SteamWindow
 
 	public LoginWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
 	{
-		UsernameEdit = new(panel, renderer, "UsernameEdit", 121, 68, 238, 24);
-		PasswordEdit = new(panel, renderer, "PasswordEdit", 121, 102, 238, 24)
-		{
-			isPassword = true
-		};
-
-		RememberPasswordButton = new(panel, renderer, "RememberPasswordButton", 118, 132, text: Localization.GetString("Steam_Login_RememberPassword"));
-
-		LoginButton = new(panel, renderer, "LoginButton", 120, 164, 80, 24, Localization.GetString("Steam_Login_Btn"), 1);
-		CancelButton = new(panel, renderer, "CancelButton", 205, 164, 84, 24, Localization.GetString("vgui_Cancel"), 1);
-
-		divider = new(panel, renderer, "Divider", 20, 202, 380, 3);
-
-		CreateNewAccountButton = new(panel, renderer, "CreateNewAccountButton", 228, 220, 174, 24, Localization.GetString("Steam_Login_CreateNewAccount"), 1);
-		LostPasswordButton = new(panel, renderer, "LostPasswordButton", 228, 252, 174, 24, Localization.GetString("Steam_Login_RetrievePassword"), 1);
-
-		CreateNewAccountButton.OnClick += () =>
-		{
-			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://store.steampowered.com/join/") { UseShellExecute = true });
-		};
-
-		LostPasswordButton.OnClick += () =>
-		{
-			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://help.steampowered.com/en/wizard/HelpWithLogin") { UseShellExecute = true });
-		};
-
-		LoginButton.OnClick += () =>
-		{
-			AttemptSteamLogin();
-		};
-
-		panel.AddControl(UsernameEdit);
-		panel.AddControl(PasswordEdit);
-		panel.AddControl(RememberPasswordButton);
-		panel.AddControl(LoginButton);
-		panel.AddControl(CancelButton);
-		panel.AddControl(CreateNewAccountButton);
-		panel.AddControl(LostPasswordButton);
+		panel.LoadUILayout("SteamLoginDialog.res");
 
 		Steam.Instance.manager.Subscribe<SteamClient.ConnectedCallback>(OnConnected);
 		Steam.Instance.manager.Subscribe<SteamClient.DisconnectedCallback>(OnDisconnected);
+
+		UsernameEdit = panel.GetControl<TextEntryControl>("UserNameEdit");
+		PasswordEdit = panel.GetControl<TextEntryControl>("PasswordEdit");
+		RememberPasswordButton = panel.GetControl<CheckButtonControl>("SavePasswordCheck");
+		LoginButton = panel.GetControl<ButtonControl>("LoginButton");
+		CancelButton = panel.GetControl<ButtonControl>("CancelButton");
+		CreateNewAccountButton = panel.GetControl<ButtonControl>("CreateNewAccountButton");
+		LostPasswordButton = panel.GetControl<ButtonControl>("LostPasswordButton");
+
+		LoginButton.OnClick += AttemptSteamLogin;
+		CancelButton.OnClick += () => Steam.Instance.PendingWindowsToRemove.Add(this);
+
+		CreateNewAccountButton.OnClick += () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://store.steampowered.com/join/") { UseShellExecute = true });
+		LostPasswordButton.OnClick += () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://help.steampowered.com/en/wizard/HelpWithLogin") { UseShellExecute = true });
 	}
 
 	public override void Update(float deltaTime)
 	{
 		base.Update(deltaTime);
+
 
 		UsernameEdit.enabled = !isLoggingIn;
 		PasswordEdit.enabled = !isLoggingIn;
@@ -80,21 +56,6 @@ public class LoginWindow : SteamWindow
 	public override void Draw()
 	{
 		base.Draw();
-
-		UsernameEdit.Draw();
-		PasswordEdit.Draw();
-		RememberPasswordButton.Draw();
-		LoginButton.Draw();
-		CancelButton.Draw();
-		divider.Draw();
-		CreateNewAccountButton.Draw();
-		LostPasswordButton.Draw();
-
-		panel.DrawText(Localization.GetString("Steam_AccountName"), 112, 74, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
-		panel.DrawText(Localization.GetString("Steam_Login_Password"), 112, 108, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
-
-		panel.DrawText(Localization.GetString("Steam_Login_NoAccount"), 220, 228, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
-		panel.DrawText(Localization.GetString("Steam_Login_ForgotPassword"), 220, 260, new Color(255, 255, 255, 255), false, false, 8, FontAlignment.Right);
 
 		SDL.RenderPresent(renderer);
 	}

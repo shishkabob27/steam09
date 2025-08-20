@@ -188,6 +188,11 @@ public class SteamWindow
 			panel.DrawBox(closeButtonX + i, closeButtonY + i, 2, 2, closeColor);
 			panel.DrawBox(closeButtonX + 7 - i, closeButtonY + i, 2, 2, closeColor);
 		}
+
+		foreach (var control in panel.controls.OrderBy(c => c.zIndex))
+		{
+			if (control.visible && !control.ManualDraw) control.Draw();
+		}
 	}
 
 	public void CloseWindow()
