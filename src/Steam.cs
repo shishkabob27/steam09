@@ -180,8 +180,14 @@ public partial class Steam
 
 	public void Loop()
 	{
+		const int targetFPS = 60;
+		const float targetFrameTime = 1.0f / targetFPS;
+		float frameStartTime;
+
 		while (true)
 		{
+			frameStartTime = (float)SDL.GetTicks64() / 1000f;
+
 			Update();
 			Draw();
 
@@ -195,6 +201,18 @@ public partial class Steam
 			}
 
 			manager.RunWaitCallbacks(System.TimeSpan.FromSeconds(0));
+
+			float frameEndTime = (float)SDL.GetTicks64() / 1000f;
+			float frameDuration = frameEndTime - frameStartTime;
+
+			if (frameDuration < targetFrameTime)
+			{
+				uint delayMs = (uint)((targetFrameTime - frameDuration) * 1000);
+				if (delayMs > 0)
+				{
+					SDL.Delay(delayMs);
+				}
+			}
 		}
 	}
 
