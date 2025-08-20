@@ -37,6 +37,9 @@ public class ListControl : UIControl
 		scrollbarButtonUp = new ScrollbarButtonControl(parent, renderer, "scrollbarButtonUp", x + width - 18, 0, 15, 14, 0, true);
 		scrollbarButtonDown = new ScrollbarButtonControl(parent, renderer, "scrollbarButtonDown", x + width - 18, 0, 15, 14, 1, false);
 		scrollbarControl = new ScrollbarControl(parent, renderer, "scrollbarControl", x + width - 18, y, 15, height);
+		scrollbarButtonUp.ManualDraw = true;
+		scrollbarButtonDown.ManualDraw = true;
+		scrollbarControl.ManualDraw = true;
 		parent.AddControl(scrollbarButtonUp);
 		parent.AddControl(scrollbarButtonDown);
 		parent.AddControl(scrollbarControl);
