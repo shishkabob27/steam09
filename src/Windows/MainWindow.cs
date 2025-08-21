@@ -37,6 +37,7 @@ public class MainWindow : SteamWindow
 	Dictionary<int, bool> catagoryOpenState; // Catagory index, open state
 
 	SolidBackgroundControl topBarBackground;
+	SolidBackgroundControl bottomBarBackground;
 	SolidBackgroundControl GameListBackground;
 
 	public MainWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
@@ -80,26 +81,16 @@ public class MainWindow : SteamWindow
 		panel.AddControl(SettingsButton);
 		panel.AddControl(SupportButton);
 
-		TabList = new TabList(panel, renderer, "tablist", 1, 68);
-		panel.AddControl(TabList);
-
-		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_store", 0, 0, 66, 22, Localization.GetString("Steam_Store_TabTitle"), TabList));
-		//TabList.Children.Add(new TabItem(panel, renderer, "tabitem_community", 0, 0, 71, 22, "Community", TabList));
-		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_mygames", 0, 0, 66, 22, Localization.GetString("Steam_MyGames_TabTitle"), TabList));
-
-		TabList.SetTabSelected("tabitem_mygames", true);
-
-		TabList.OnTabSelected = OnTabSelected;
-
-		foreach (var tabItem in TabList.Children)
-		{
-			panel.AddControl(tabItem);
-		}
 
 		//top bar background
 		topBarBackground = new SolidBackgroundControl(panel, renderer, "topbarbackground", 0, 68, mWidth, 22, new Color(104, 106, 101, 255));
 		topBarBackground.zIndex = 1;
 		panel.AddControl(topBarBackground);
+
+		//bottom bar background
+		bottomBarBackground = new SolidBackgroundControl(panel, renderer, "bottombarbackground", 0, mHeight - 117, mWidth, 39, new Color(104, 106, 101, 255));
+		bottomBarBackground.zIndex = 1;
+		panel.AddControl(bottomBarBackground);
 
 		//browser controls
 		{
@@ -168,6 +159,22 @@ public class MainWindow : SteamWindow
 			steam.PendingWindows.Add(friendsWindow);
 		};
 
+		TabList = new TabList(panel, renderer, "tablist", 1, 68);
+		panel.AddControl(TabList);
+
+		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_store", 0, 0, 66, 22, Localization.GetString("Steam_Store_TabTitle"), TabList));
+		//TabList.Children.Add(new TabItem(panel, renderer, "tabitem_community", 0, 0, 71, 22, "Community", TabList));
+		TabList.Children.Add(new TabItem(panel, renderer, "tabitem_mygames", 0, 0, 66, 22, Localization.GetString("Steam_MyGames_TabTitle"), TabList));
+
+		foreach (var tabItem in TabList.Children)
+		{
+			panel.AddControl(tabItem);
+		}
+
+		TabList.OnTabSelected = OnTabSelected;
+		
+		TabList.SetTabSelected("tabitem_mygames", true);
+
 		CreateControls();
 
 		LoadFavorites();
@@ -187,10 +194,49 @@ public class MainWindow : SteamWindow
 				browser.LoadURL("https://store.steampowered.com/");
 			}
 
+			//enable browser controls
+			BackButton.visible = true;
+			ForwardButton.visible = true;
+			ReloadButton.visible = true;
+			StopButton.visible = true;
+			HomeButton.visible = true;
+
+			ReloadButton.enabled = true;
+			StopButton.enabled = true;
+			HomeButton.enabled = true;
+
+			topBarBackground.height = 43;
+
+			gameList.enabled = false;
+			foreach (var child in gameList.Children)
+			{
+				child.enabled = false;
+			}
 		}
 		else
 		{
 			inBrowserWindow = false;
+
+			//disable browser controls
+			BackButton.visible = false;
+			ForwardButton.visible = false;
+			ReloadButton.visible = false;
+			StopButton.visible = false;
+			HomeButton.visible = false;
+
+			BackButton.enabled = false;
+			ForwardButton.enabled = false;
+			ReloadButton.enabled = false;
+			StopButton.enabled = false;
+			HomeButton.enabled = false;
+
+			gameList.enabled = true;
+			foreach (var child in gameList.Children)
+			{
+				child.enabled = true;
+			}
+
+			topBarBackground.height = 22;
 		}
 	}
 
@@ -223,59 +269,24 @@ public class MainWindow : SteamWindow
 			browser.OnMouseMove(panel.MouseX - 1, panel.MouseY - 111);
 			browser.Update();
 
-			//enable browser controls
-			BackButton.visible = true;
-			ForwardButton.visible = true;
-			ReloadButton.visible = true;
-			StopButton.visible = true;
-			HomeButton.visible = true;
-
-			ReloadButton.enabled = true;
-			StopButton.enabled = true;
-			HomeButton.enabled = true;
-
 			BackButton.enabled = browser.CanGoBack();
 			ForwardButton.enabled = browser.CanGoForward();
-
-			topBarBackground.width = mWidth;
-			topBarBackground.height = 43;
-
-			gameList.enabled = false;
-			foreach (var child in gameList.Children)
-			{
-				child.enabled = false;
-			}
 		}
 		else
 		{
-			//disable browser controls
-			BackButton.visible = false;
-			ForwardButton.visible = false;
-			ReloadButton.visible = false;
-			StopButton.visible = false;
-			HomeButton.visible = false;
-
-			BackButton.enabled = false;
-			ForwardButton.enabled = false;
-			ReloadButton.enabled = false;
-			StopButton.enabled = false;
-			HomeButton.enabled = false;
-
 			//resize game list
 			gameList.width = mWidth - 2;
 			gameList.height = mHeight - 117 - 90;
-			gameList.enabled = true;
-			foreach (var child in gameList.Children)
-			{
-				child.enabled = true;
-			}
-
-			topBarBackground.width = mWidth;
-			topBarBackground.height = 22;
 
 			GameListBackground.width = mWidth - 2;
 			GameListBackground.height = mHeight - 117 - 90;
+
+			//bars
+			bottomBarBackground.y = mHeight - 117;
+			bottomBarBackground.width = mWidth;
 		}
+
+		topBarBackground.width = mWidth;
 
 		//move bottom buttons to bottom
 		NewsButton.y = mHeight - 68;
@@ -313,11 +324,6 @@ public class MainWindow : SteamWindow
 
 	public void GameListDraw()
 	{
-		//bars
-		{
-			panel.DrawBox(0, mHeight - 117, mWidth, 39, new Color(104, 106, 101, 255));
-		}
-
 		//game list table names
 		{
 			panel.DrawText(Localization.GetString("Steam_GamesColumn"), 53, 73, new Color(216, 222, 211, 255), fontSize: 7);
@@ -493,10 +499,12 @@ public class MainWindow : SteamWindow
 	{
 		//these button's positions are relative to the window
 		GameActionButton = new ButtonControl(panel, renderer, "gameactionbutton", 0, 0, 98, 24, Localization.GetString("Steam_Launch"));
+		GameActionButton.zIndex = 3;
 		panel.AddControl(GameActionButton);
 		GameActionButton.OnClick = () => OnGameAction(selectedGameID);
 
 		PropertiesButton = new ButtonControl(panel, renderer, "propertiesbutton", 0, 0, 98, 24, Localization.GetString("Steam_Properties"));
+		PropertiesButton.zIndex = 3;
 		panel.AddControl(PropertiesButton);
 		PropertiesButton.OnClick = () =>
 		{
