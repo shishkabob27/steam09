@@ -1,9 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using KGUI;
 using Microsoft.Win32;
-using SDL_Sharp;
-using SDL_Sharp.Loader;
-using SDL_Sharp.Ttf;
+using SDL;
 using SteamKit2;
 using SteamKit2.Internal;
 
@@ -18,10 +17,6 @@ public partial class Steam
 	float lastTime = 0;
 
 	public TaskIcon TaskIcon;
-
-	public List<SteamWindow> Windows = new List<SteamWindow>();
-	public List<SteamWindow> PendingWindows = new List<SteamWindow>();
-	public List<SteamWindow> PendingWindowsToRemove = new List<SteamWindow>();
 
 	public SteamClient steamClient;
 	public SteamUser steamUser;
@@ -43,17 +38,15 @@ public partial class Steam
 		CreateDirectories();
 
 		//SDL init
-		SdlLoader.LoadDefault();
-		SDL.Init(SdlInitFlags.Video | SdlInitFlags.Events);
-		TTF.Init();
+		SDL3.SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_EVENTS | SDL_InitFlags.SDL_INIT_AUDIO);
+		SDL3_ttf.TTF_Init();
 
 		if (OperatingSystem.IsWindows())
 		{
 			SetupRegistry();
+			TaskIcon = new TaskIcon();
+			TaskIcon.Initialize();
 		}
-
-		TaskIcon = new TaskIcon();
-		TaskIcon.Initialize();
 
 		// Initialize Steam
 		steamClient = new SteamClient();
@@ -143,8 +136,8 @@ public partial class Steam
 	public void Shutdown()
 	{
 		TaskIcon?.Cleanup();
-		TTF.Quit();
-		SDL.Quit();
+		SDL3_ttf.TTF_Quit();
+		SDL3.SDL_Quit();
 	}
 
 	public void ShowMainWindow()
@@ -159,16 +152,13 @@ public partial class Steam
 		{
 			return;
 		}
-
-		foreach (SteamWindow window in Windows)
+		if (WindowManager.Instance.GetWindows().OfType<MainWindow>().Any()) //if main window has already been shown, don't show it again
 		{
-			if (window is MainWindow)
-			{
-				window.FocusWindow();
-				return;
-			}
+			WindowManager.Instance.HighlightWindow<MainWindow>();
+			return;
 		}
 
+		//create it next loop
 		mainwindowState = 1;
 	}
 
@@ -186,31 +176,27 @@ public partial class Steam
 
 		while (true)
 		{
-			frameStartTime = (float)SDL.GetTicks64() / 1000f;
-
 			Update();
 			Draw();
 
-			SDL_Sharp.Event e;
-			while (SDL.PollEvent(out e) != 0)
+			unsafe
 			{
-				foreach (SteamWindow window in Windows)
+				SDL_Event e;
+				while (SDL3.SDL_PollEvent(&e))
 				{
-					window.HandleSDLEvent(e);
-				}
-			}
+					foreach (BaseWindow window in WindowManager.Instance.GetWindows())
+					{
+						window.HandleSDLEvent(e);
+					}
 
-			manager.RunWaitCallbacks(System.TimeSpan.FromSeconds(0));
-
-			float frameEndTime = (float)SDL.GetTicks64() / 1000f;
-			float frameDuration = frameEndTime - frameStartTime;
-
-			if (frameDuration < targetFrameTime)
-			{
-				uint delayMs = (uint)((targetFrameTime - frameDuration) * 1000);
-				if (delayMs > 0)
-				{
-					SDL.Delay(delayMs);
+					//DEBUG
+					if ((SDL_EventType)e.type == SDL_EventType.SDL_EVENT_KEY_UP)
+					{
+						if (e.key.key == SDL_Keycode.SDLK_1 && (e.key.mod & SDL_Keymod.SDL_KMOD_LCTRL) != 0)
+						{
+							WindowManager.Instance.CreateWindow(new LoginWindow(this, "test_window"));
+						}
+					}
 				}
 			}
 		}
@@ -218,70 +204,39 @@ public partial class Steam
 
 	public void Update()
 	{
-		now = (float)SDL.GetTicks64() / 1000f;
+		UIThread.ProcessPending();
+
+		now = SDL3.SDL_GetTicks() / 1000f;
 		float deltaTime = now - lastTime;
 		lastTime = now;
 
 		TaskIcon?.ProcessMessages();
+
+		manager.RunWaitCallbacks(System.TimeSpan.FromSeconds(0));
 
 		// Process any queued window creation requests from background threads
 		SteamGuardAuthenticator.ProcessWindowCreationQueue();
 
 		if (loginWindowState == 1)
 		{
-			PendingWindows.Add(new LoginWindow(this, Localization.GetString("Steam_Login_Title"), 420, 300, false));
+			WindowManager.Instance.CreateWindow(new LoginWindow(this, "login_window"));
 			loginWindowState = 2;
 		}
 
 		if (mainwindowState == 1)
 		{
 			//hide logging in window
-			foreach (SteamWindow window in Windows)
-			{
-				if (window is LoggingInWindow)
-				{
-					PendingWindowsToRemove.Add(window);
-				}
-			}
+			WindowManager.Instance.CloseWindow<LoggingInWindow>();
 
-			//create main window
-			PendingWindows.Add(new MainWindow(this, Localization.GetString("Steam_Root_Title").Replace("%account%", CurrentUser.AccountName), 1000, 660, true, 640, 480));
+			// //create main window
+			WindowManager.Instance.CreateWindow(new MainWindow(this, "main_window"));
 			mainwindowState = 2;
 		}
 
-		foreach (SteamWindow window in PendingWindows)
-		{
-			Windows.Add(window);
-		}
-		PendingWindows.Clear();
-
-		List<SteamWindow> ActualWindowsToRemove = new List<SteamWindow>();
-		foreach (SteamWindow window in PendingWindowsToRemove)
-		{
-			//check if window is already faded out
-			if (window.windowOpacity <= 0.0f)
-			{
-				window.CloseWindow();
-				Windows.Remove(window);
-				ActualWindowsToRemove.Add(window);
-				continue;
-			}
-
-			window.isFadingOut = true;
-		}
-
-		foreach (SteamWindow window in ActualWindowsToRemove)
-		{
-			PendingWindowsToRemove.Remove(window);
-		}
-
-		foreach (SteamWindow window in Windows)
-		{
-			window.Update(deltaTime);
-		}
+		WindowManager.Instance.Update(deltaTime);
 
 		//if no windows exists and the user is not logged in, quit
-		if (Windows.Count == 0 && CurrentUser == null)
+		if (WindowManager.Instance.GetWindows().Count == 0 && CurrentUser == null)
 		{
 			QuitApplication();
 		}
@@ -289,9 +244,6 @@ public partial class Steam
 
 	public void Draw()
 	{
-		foreach (SteamWindow window in Windows)
-		{
-			window?.Draw();
-		}
+		WindowManager.Instance.Draw();
 	}
 }

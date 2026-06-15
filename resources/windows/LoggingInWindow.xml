@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LoggingInWindow title="STEAM" width="400" height="100" resizable="false">
+	<LabelControl id="loginText" x="30" y="22" width="240" height="50" text="#Steam_LaunchingSteam" />
+</LoggingInWindow>

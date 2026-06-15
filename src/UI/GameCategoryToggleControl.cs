@@ -1,70 +1,45 @@
-using SDL_Sharp;
+using System.Drawing;
+using KGUI;
+using SDL;
 
-public class GameCategoryToggleControl : UIControl
+public class GameCategoryToggleControl : TreeViewItem
 {
-	public bool Open = true;
-
-	ListControl gameList;
+	public ListViewControl gameList;
 
 	public int categoryIndex;
 
-	public GameCategoryToggleControl(UIPanel parent, Renderer renderer, string controlName, string catagoryText, ListControl gameList, int categoryIndex, bool open = true) : base(parent, renderer, controlName, 0, 0, 0, 0)
+	unsafe SDL_Texture* _categoryIconTexture;
+
+	protected override int GetInitialHeight() => 30;
+
+	public GameCategoryToggleControl(UIControl parent) : base(parent)
 	{
-		this.text = catagoryText;
+		SetIsCategory(true);
 		this.height = 30;
-		this.gameList = gameList;
-		this.categoryIndex = categoryIndex;
-		this.Open = open;
 
-		OnClick = () =>
+		unsafe
 		{
-			if (enabled)
-			{
-				Open = !Open;
-				UpdateGameVisibility();
-			}
-		};
-
-		OnDoubleClick = () =>
-		{
-			if (enabled)
-			{
-				Open = !Open;
-				UpdateGameVisibility();
-			}
-		};
+			_categoryIconTexture = LoadTexture(Assets.GetAssetPath("graphics/category_icon.png"));
+		}
 	}
 
-	public override void Draw()
+	public unsafe override void Draw()
 	{
-		base.Draw();
 
 		if (mouseOver)
 		{
-			if (Open) parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 1, 0, 14, 9);
-			else parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 1, 1, 14, 9);
+			if (_expanded) DrawTextureSheet(_categoryIconTexture, 12, 15, 1, 0, 14, 9);
+			else DrawTextureSheet(_categoryIconTexture, 12, 15, 1, 1, 14, 9);
 		}
 		else
 		{
-			if (Open) parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 0, 0, 14, 9);
-			else parent.DrawTextureSheet(parent.categoryIconTexture, x + 12, y + 15, 0, 1, 14, 9);
+			if (_expanded) DrawTextureSheet(_categoryIconTexture, 12, 15, 0, 0, 14, 9);
+			else DrawTextureSheet(_categoryIconTexture, 12, 15, 0, 1, 14, 9);
 		}
 
-		parent.DrawText(text, x + 28, y + height - 15, new Color(196, 181, 80, 255), fontSize: 7);
+		DrawText(text, 28, GetInitialHeight() - 15, Color.FromArgb(196, 181, 80), fontSize: 7);
 
-		//draw line
-		parent.DrawBox(x + 29, y + height - 2, width - 58, 1, new Color(121, 126, 121, 255));
-	}
-
-	public void UpdateGameVisibility()
-	{
-		List<GameItemControl> gamesBelongingToCategory = GetGamesBelongingToCategory();
-
-		//update visibility of games
-		foreach (var gameControl in gamesBelongingToCategory)
-		{
-			gameControl.visible = Open;
-		}
+		DrawBox(29, GetInitialHeight() - 2, width - 58, 1, Color.FromArgb(121, 126, 121));
 	}
 
 	public List<GameItemControl> GetGamesBelongingToCategory()
@@ -91,5 +66,10 @@ public class GameCategoryToggleControl : UIControl
 		}
 
 		return gamesBelongingToCategory;
+	}
+
+	public override void TestClickExpandButton(UIControl control)
+	{
+		_expanded = !_expanded;
 	}
 }

@@ -1,4 +1,4 @@
-using SDL_Sharp;
+using SDL;
 using SteamKit2.Internal;
 using UltralightNet;
 using UltralightNet.AppCore;
@@ -40,17 +40,20 @@ public class Browser
 
 		BrowserView.OnChangeCursor += (cursor) =>
 		{
-			if (cursor == ULCursor.Pointer)
-			{
-				SDL.SetCursor(SDL.CreateSystemCursor(SystemCursor.Arrow));
-			}
-			else if (cursor == ULCursor.IBeam)
-			{
-				SDL.SetCursor(SDL.CreateSystemCursor(SystemCursor.IBeam));
-			}
-			else if (cursor == ULCursor.Hand)
-			{
-				SDL.SetCursor(SDL.CreateSystemCursor(SystemCursor.Hand));
+			unsafe
+			{				
+				if (cursor == ULCursor.Pointer)
+				{
+					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_POINTER));
+				}
+				else if (cursor == ULCursor.IBeam)
+				{
+					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_TEXT));
+				}
+				else if (cursor == ULCursor.Hand)
+				{
+					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_DEFAULT));
+				}
 			}
 		};
 	}
@@ -178,24 +181,24 @@ public class Browser
 		BrowserView.FireScrollEvent(scrollEvent);
 	}
 
-	public void OnKeyDown(Keycode key, KeyModifier mod)
+	public void OnKeyDown(SDL_Keycode key, SDL_Keymod mod)
 	{
 		Console.WriteLine(key);
 
 		ULKeyEventModifiers modifiers = 0;
-		if (mod.HasFlag(KeyModifier.LeftShift))
+		if (mod.HasFlag(SDL_Keymod.SDL_KMOD_LSHIFT))
 		{
 			modifiers |= ULKeyEventModifiers.ShiftKey;
 		}
-		if (mod.HasFlag(KeyModifier.LeftCtrl))
+		if (mod.HasFlag(SDL_Keymod.SDL_KMOD_LCTRL))
 		{
 			modifiers |= ULKeyEventModifiers.CtrlKey;
 		}
-		if (mod.HasFlag(KeyModifier.LeftAlt))
+		if (mod.HasFlag(SDL_Keymod.SDL_KMOD_LALT))
 		{
 			modifiers |= ULKeyEventModifiers.AltKey;
 		}
-		if (mod.HasFlag(KeyModifier.LeftGui))
+		if (mod.HasFlag(SDL_Keymod.SDL_KMOD_LGUI))
 		{
 			modifiers |= ULKeyEventModifiers.MetaKey;
 		}
@@ -206,7 +209,7 @@ public class Browser
 		BrowserView.FireKeyEvent(keyEvent);
 	}
 
-	public void OnKeyUp(Keycode key, KeyModifier mod)
+	public void OnKeyUp(SDL_Keycode key, SDL_Keymod mod)
 	{
 		Console.WriteLine(key);
 
@@ -221,25 +224,22 @@ public class Browser
 		BrowserRenderer.Update();
 	}
 
-	public void Draw(SDL_Sharp.Renderer renderer, Rect destRect)
+	public unsafe void Draw(SDL_Renderer* renderer, SDL_FRect destRect)
 	{
 		BrowserRenderer.Render();
 
-		unsafe
-		{
-			byte* basePtr = BrowserView.Surface.Value.Bitmap.LockPixels();
-			int pitch = (int)BrowserView.Surface.Value.Bitmap.RowBytes;
+		byte* basePtr = BrowserView.Surface.Value.Bitmap.LockPixels();
+		int pitch = (int)BrowserView.Surface.Value.Bitmap.RowBytes;
 
-			Surface* surface = SDL.CreateRGBSurfaceFrom(basePtr, (int)BrowserView.Width, (int)BrowserView.Height, 32, pitch, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+		SDL_Surface* surface = SDL3.SDL_CreateSurfaceFrom((int)BrowserView.Width, (int)BrowserView.Height, SDL3.SDL_PIXELFORMAT_RGBA32, pitch, *basePtr);
 
-			Texture texture = SDL.CreateTextureFromSurface(renderer, surface);
+		SDL_Texture* texture = SDL3.SDL_CreateTextureFromSurface(renderer, surface);
 
-			SDL.RenderCopy(renderer, texture, null, &destRect);
+		SDL3.SDL_RenderTexture(renderer, texture, null, &destRect);
 
-			SDL.FreeSurface(surface);
-			SDL.DestroyTexture(texture);
+		SDL3.SDL_DestroySurface(surface);
+		SDL3.SDL_DestroyTexture(texture);
 
-			BrowserView.Surface.Value.Bitmap.UnlockPixels();
-		}
+		BrowserView.Surface.Value.Bitmap.UnlockPixels();
 	}
 }

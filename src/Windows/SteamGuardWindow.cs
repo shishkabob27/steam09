@@ -1,28 +1,19 @@
-using SDL_Sharp;
+using KGUI;
+using SDL;
 
 public class SteamGuardWindow : SteamWindow
 {
+	LabelControl promptLabel;
 	ButtonControl enterButton;
 	TextEntryControl codeEdit;
 	SteamGuardAuthenticator? authenticator;
-	string promptText = "Please enter the code from your authenticator";
 	bool isConfirmationMode = false;
 
-	public SteamGuardWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+	public SteamGuardWindow(Steam steam, string uuid) : base(steam, uuid)
 	{
-		enterButton = new ButtonControl(panel, renderer, "enterButton", 155, 110, 125, 24, "Enter", 1);
-
-		codeEdit = new TextEntryControl(panel, renderer, "codeEdit", 20, 80, 260, 24)
-		{
-			OnEnterPressed = OnEnterPressed,
-			maxLength = 5
-		};
-
-		enterButton.OnClick += OnEnterPressed;
-
-		// Add all controls
-		panel.AddControl(enterButton);
-		panel.AddControl(codeEdit);
+		promptLabel = panel.GetControlByID<LabelControl>("PromptLabel");
+		codeEdit = panel.GetControlByID<TextEntryControl>("CodeEdit");
+		enterButton = panel.GetControlByID<ButtonControl>("EnterButton");
 
 		// Default to code entry mode
 		SetCodeEntryMode();
@@ -35,19 +26,19 @@ public class SteamGuardWindow : SteamWindow
 
 	public void SetDeviceCodeMode()
 	{
-		promptText = "Please enter the code from your authenticator";
+		promptLabel.text = "Please enter the code from your authenticator";
 		SetCodeEntryMode();
 	}
 
 	public void SetEmailMode(string email)
 	{
-		promptText = $"Please enter the code sent to {email}";
+		promptLabel.text = $"Please enter the code sent to {email}";
 		SetCodeEntryMode();
 	}
 
 	public void SetConfirmationMode()
 	{
-		promptText = "Please approve this login on your Steam Mobile App...";
+		promptLabel.text = "Please approve this login on your Steam Mobile App...";
 		isConfirmationMode = true;
 
 		// Hide code entry controls
@@ -81,16 +72,7 @@ public class SteamGuardWindow : SteamWindow
 		}
 	}
 
-	public override void Draw()
-	{
-		base.Draw();
-
-		panel.DrawText(promptText, 28, 48, new Color(230, 236, 224, 255));
-
-		SDL.RenderPresent(renderer);
-	}
-
-	void OnEnterPressed()
+	void OnEnterCode()
 	{
 		if (codeEdit.text.Length != 5)
 		{
@@ -100,7 +82,7 @@ public class SteamGuardWindow : SteamWindow
 		// Send the code to the authenticator
 		authenticator?.OnCodeEntered(codeEdit.text);
 
-		steam.PendingWindowsToRemove.Add(this);
+		WindowManager.Instance.CloseWindow(this);
 	}
 
 	void OnCancelPressed()
@@ -114,15 +96,15 @@ public class SteamGuardWindow : SteamWindow
 			authenticator?.OnCodeCancelled();
 		}
 
-		steam.PendingWindowsToRemove.Add(this);
+		WindowManager.Instance.CloseWindow(this);
 	}
 
-	public override void OnKeyDown(Keycode key, KeyModifier mod)
+	public override void OnKeyDown(SDL_Keycode key, SDL_Keymod mod)
 	{
 		base.OnKeyDown(key, mod);
 
 		// Handle Escape key to cancel
-		if (key == Keycode.Escape)
+		if (key == SDL_Keycode.SDLK_ESCAPE)
 		{
 			OnCancelPressed();
 		}

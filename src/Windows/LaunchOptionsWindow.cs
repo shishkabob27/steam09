@@ -1,4 +1,4 @@
-using SDL_Sharp;
+using KGUI;
 
 public class LaunchOptionsWindow : SteamWindow
 {
@@ -11,17 +11,18 @@ public class LaunchOptionsWindow : SteamWindow
 
 	List<RadioButtonControl> radioButtons = new List<RadioButtonControl>();
 
-	public LaunchOptionsWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+	public LaunchOptionsWindow(Steam steam, string uuid) : base(steam, uuid)
 	{
-		launchButton = new ButtonControl(panel, renderer, "launchbutton", 0, 0, 98, 24, Localization.GetString("Steam_Launch"), 1);
-		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 98, 24, Localization.GetString("vgui_Cancel"), 1);
-		panel.AddControl(launchButton);
-		panel.AddControl(cancelButton);
+		launchButton = panel.GetControlByID<ButtonControl>("launchbutton");
+		cancelButton = panel.GetControlByID<ButtonControl>("cancelbutton");
+
+		launchButton.text = Localization.GetString("Steam_Launch");
+		cancelButton.text = Localization.GetString("vgui_Cancel");
 
 		launchButton.OnClick += Launch;
-		cancelButton.OnClick += () =>
+		cancelButton.OnClick += (control) =>
 		{
-			steam.PendingWindowsToRemove.Add(this);
+			WindowManager.Instance.CloseWindow(this);
 		};
 	}
 
@@ -36,9 +37,14 @@ public class LaunchOptionsWindow : SteamWindow
 
 		foreach (Tuple<string, string, string> launchConfig in launchConfigs)
 		{
-			RadioButtonControl radioButton = new RadioButtonControl(panel, renderer, $"launchconfig_{launchConfig.Item3}", 20, 32 + radioButtons.Count * 30, text: launchConfig.Item3);
+			RadioButtonControl radioButton = new RadioButtonControl(panel.RootControl);
+			radioButton.x = 20;
+			radioButton.y = 32 + radioButtons.Count * 30;
+			radioButton.width = 300;
+			radioButton.height = 24;
+			radioButton.text = launchConfig.Item3;
 			radioButtons.Add(radioButton);
-			panel.AddControl(radioButton);
+			panel.RootControl.AddChild(radioButton);
 			radioButton.OnSelected += (selected) =>
 			{
 				selectedLaunchConfig = radioButtons.IndexOf(radioButton);
@@ -50,18 +56,14 @@ public class LaunchOptionsWindow : SteamWindow
 	{
 		base.Update(deltaTime);
 
+		if (radioButtons.Count == 0)
+			return;
+
 		if (selectedLaunchConfig == -1)
 		{
 			radioButtons[0].selected = true;
 			selectedLaunchConfig = 0;
 		}
-
-		//Align buttons to the bottom right of the window
-		cancelButton.x = mWidth - cancelButton.width - 10;
-		cancelButton.y = mHeight - cancelButton.height - 10;
-
-		launchButton.x = cancelButton.x - launchButton.width - 10;
-		launchButton.y = mHeight - launchButton.height - 10;
 	}
 
 	public override void Draw()
@@ -74,16 +76,11 @@ public class LaunchOptionsWindow : SteamWindow
 			radioButton.Draw();
 			y += 30;
 		}
-
-		launchButton.Draw();
-		cancelButton.Draw();
-
-		SDL.RenderPresent(renderer);
 	}
 
-	public void Launch()
+	public void Launch(UIControl control)
 	{
-		steam.BeginLaunchGame(game, launchConfigs[selectedLaunchConfig]);
-		steam.PendingWindowsToRemove.Add(this);
+		client.BeginLaunchGame(game, launchConfigs[selectedLaunchConfig]);
+		WindowManager.Instance.CloseWindow(this);
 	}
 }

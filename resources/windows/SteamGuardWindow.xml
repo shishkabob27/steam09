@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SteamGuardWindow title="Steam Guard" width="300" height="150" resizable="false">
+	<LabelControl id="PromptLabel" x="12" y="30" width="280" height="24" text="" textAlignment="center"/>
+	<TextEntryControl id="CodeEdit" x="10" y="80" width="200" height="24" tabPosition="1" textHidden="false" maxChars="5" OnEnterPressed="OnEnterCode" />
+	<ButtonControl id="EnterButton" x="155" y="110" width="125" height="24" tabPosition="2" text="Enter" onClick="OnEnterCode"/>
+</SteamGuardWindow>

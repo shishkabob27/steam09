@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LaunchOptionsWindow title="Steam Guard" width="400" height="200" resizable="false">
+	<ButtonControl id="launchbutton" pinnedRight="118" pinnedBottom="10" width="98" height="24" text="Launch" style="1" />
+	<ButtonControl id="cancelbutton" pinnedRight="10" pinnedBottom="10" width="98" height="24" text="Cancel" style="1" />
+</LaunchOptionsWindow>

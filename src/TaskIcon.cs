@@ -126,7 +126,8 @@ public class TaskIcon
 
     const uint PM_REMOVE = 0x0001;
     const uint MF_STRING = 0x00000000;
-    const uint TPM_RIGHTBUTTON = 0x0002;
+	const uint MF_SEPARATOR = 0x00000008;
+	const uint TPM_RIGHTBUTTON = 0x0002;
     const uint TPM_RETURNCMD = 0x0100;
 
     // loadimage constants
@@ -242,6 +243,7 @@ public class TaskIcon
         IntPtr hMenu = CreatePopupMenu();
         
         AppendMenu(hMenu, MF_STRING, MENU_SHOW_LIBRARY, "My Games");
+		AppendMenu(hMenu, MF_SEPARATOR, 0, null); // separator
         AppendMenu(hMenu, MF_STRING, MENU_QUIT_STEAM, "Quit");
 
         GetCursorPos(out POINT pt);

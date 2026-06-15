@@ -1,31 +1,15 @@
-using SDL_Sharp;
+using KGUI;
 
 public class RequestWebAPIKeyWindow : SteamWindow
 {
 	ButtonControl enterButton;
-	ButtonControl retrieveButton;
 	TextEntryControl webApiKeyEdit;
 
-	public RequestWebAPIKeyWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+	public RequestWebAPIKeyWindow(Steam steam, string uuid) : base(steam, uuid)
 	{
-		retrieveButton = new ButtonControl(panel, renderer, "retrieveButton", 20, 110, 125, 24, "Retrieve key", 1);
-		enterButton = new ButtonControl(panel, renderer, "enterButton", 155, 110, 125, 24, "Enter", 1);
-
-		webApiKeyEdit = new TextEntryControl(panel, renderer, "webApiKeyEdit", 20, 80, 260, 24)
-		{
-			OnEnterPressed = OnEnterPressed,
-			maxLength = 32
-		};
-
-		enterButton.OnClick += OnEnterPressed;
-		retrieveButton.OnClick += () =>
-		{
-			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://steamcommunity.com/dev/apikey") { UseShellExecute = true });
-		};
-
-		panel.AddControl(enterButton);
-		panel.AddControl(retrieveButton);
-		panel.AddControl(webApiKeyEdit);
+		SetTitle("STEAM - " + steam.CurrentUser.AccountName);
+		enterButton = panel.GetControlByID<ButtonControl>("enterButton");
+		webApiKeyEdit = panel.GetControlByID<TextEntryControl>("apiKeyTextBox");
 	}
 
 	public override void Update(float deltaTime)
@@ -42,26 +26,22 @@ public class RequestWebAPIKeyWindow : SteamWindow
 		}
 	}
 
-	public override void Draw()
+	void OnRetrieveButtonClick()
 	{
-		base.Draw();
-
-		panel.DrawText("Please enter your Steam Web API key", 28, 48, new Color(230, 236, 224, 255));
-
-		SDL.RenderPresent(renderer);
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://steamcommunity.com/dev/apikey") { UseShellExecute = true });
 	}
 
-	void OnEnterPressed()
+	void OnEnterButtonClick()
 	{
 		if (webApiKeyEdit.text.Length != 32)
 		{
 			return;
 		}
 
-		steam.PendingWindowsToRemove.Add(this);
+		WindowManager.Instance.CloseWindow(this);
 
-		steam.CurrentUser.WebAPIKey = webApiKeyEdit.text;
-		steam.ModifyLoginUser(steam.CurrentUser);
-		steam.ContinueLogin();
+		client.CurrentUser.WebAPIKey = webApiKeyEdit.text;
+		client.ModifyLoginUser(client.CurrentUser);
+		client.ContinueLogin();
 	}
 }

@@ -1,11 +1,12 @@
-using SDL_Sharp;
+using System.Drawing;
+using KGUI;
 
 public class InstallGameWindow : SteamWindow
 {
 	Game game;
 
 	ButtonControl backButton;
-	ButtonControl installButton;
+	ButtonControl nextButton;
 	ButtonControl cancelButton;
 
 	int screen = 0; //0 - info, 1 - shortcuts
@@ -13,24 +14,24 @@ public class InstallGameWindow : SteamWindow
 	string gameSize; //In MB
 	int diskSpaceAvailable; //In MB
 
-	public InstallGameWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+	public InstallGameWindow(Steam steam, string uuid) : base(steam, uuid)
 	{
-		backButton = new ButtonControl(panel, renderer, "backbutton", 0, 0, 72, 24, Localization.GetString("WizardPanel_Back"), 1);
-		installButton = new ButtonControl(panel, renderer, "installbutton", 0, 0, 72, 24, Localization.GetString("Steam_Install"), 1);
-		cancelButton = new ButtonControl(panel, renderer, "cancelbutton", 0, 0, 72, 24, Localization.GetString("vgui_Cancel"), 1);
-		panel.AddControl(backButton);
-		panel.AddControl(installButton);
-		panel.AddControl(cancelButton);
+		backButton = panel.GetControlByID<ButtonControl>("BackButton");
+		nextButton = panel.GetControlByID<ButtonControl>("NextButton");
+		cancelButton = panel.GetControlByID<ButtonControl>("CancelButton");
+
+		backButton.text = Localization.GetString("WizardPanel_Back");
+		cancelButton.text = Localization.GetString("vgui_Cancel");
 
 		backButton.enabled = false;
 
-		backButton.OnClick += () =>
+		backButton.OnClick += (backButton) =>
 		{
 			screen = 0;
 			backButton.enabled = false;
 		};
 
-		installButton.OnClick += async () =>
+		nextButton.OnClick += async (nextButton) =>
 		{
 			if (screen == 0)
 			{
@@ -39,14 +40,14 @@ public class InstallGameWindow : SteamWindow
 			}
 			else if (screen == 1)
 			{
-				steam.DownloadGame(game.AppID);
-				steam.PendingWindowsToRemove.Add(this);
+				client.DownloadGame(game.AppID);
+				WindowManager.Instance.CloseWindow(this);
 			}
 		};
 
-		cancelButton.OnClick += () =>
+		cancelButton.OnClick += (cancelButton) =>
 		{
-			steam.PendingWindowsToRemove.Add(this);
+			WindowManager.Instance.CloseWindow(this);
 		};
 
 		GetDiskSpaceAvailable();
@@ -58,52 +59,27 @@ public class InstallGameWindow : SteamWindow
 		gameSize = (game.GetEstimatedSize() / 1024 / 1024).ToString("F0");
 	}
 
-	public override void Update(float deltaTime)
-	{
-		base.Update(deltaTime);
-
-		//Align buttons to the bottom right of the window
-		cancelButton.x = mWidth - cancelButton.width - 10;
-		cancelButton.y = mHeight - cancelButton.height - 10;
-
-		installButton.x = cancelButton.x - installButton.width - 10;
-		installButton.y = mHeight - installButton.height - 10;
-
-		backButton.x = installButton.x - backButton.width - 10;
-		backButton.y = mHeight - backButton.height - 10;
-	}
-
 	public override void Draw()
 	{
 		base.Draw();
 
-		//draw background
-		panel.DrawBox(10, 30, mWidth - 20, mHeight - 72, new Color(101, 106, 98, 255));
-
-		installButton.Draw();
-		installButton.text = screen == 0 ? Localization.GetString("WizardPanel_Next") : Localization.GetString("Steam_Install");
-
-		cancelButton.Draw();
-
-		backButton.Draw();
+		nextButton.text = screen == 0 ? Localization.GetString("WizardPanel_Next") : Localization.GetString("Steam_Install");
 
 		if (screen == 0)
 		{
 			//draw info screen
-			panel.DrawText(Localization.GetString("Steam_InstallGameInfo").Replace("%game%", game.Name), 30, 56, new Color(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_InstallGameInfo").Replace("%game%", game.Name), 30, 56, Color.FromArgb(255, 255, 255, 255));
 
-			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceRequired"), 30, 120, new Color(255, 255, 255, 255));
-			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceAvailable"), 30, 145, new Color(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceRequired"), 30, 120, Color.FromArgb(255, 255, 255, 255));
+			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceAvailable"), 30, 145, Color.FromArgb(255, 255, 255, 255));
 
-			panel.DrawText($"{gameSize} MB", (mWidth / 2) + 10, 120, new Color(255, 255, 255, 255));
-			panel.DrawText($"{diskSpaceAvailable} MB", (mWidth / 2) + 10, 145, new Color(255, 255, 255, 255));
+			panel.DrawText($"{gameSize} MB", (mWidth / 2) + 10, 120, Color.FromArgb(255, 255, 255, 255));
+			panel.DrawText($"{diskSpaceAvailable} MB", (mWidth / 2) + 10, 145, Color.FromArgb(255, 255, 255, 255));
 		}
 		else if (screen == 1)
 		{
-			panel.DrawText($"TODO: Shortcuts screen", 30, 56, new Color(255, 255, 255, 255));
+			panel.DrawText($"TODO: Shortcuts screen", 30, 56, Color.FromArgb(255, 255, 255, 255));
 		}
-
-		SDL.RenderPresent(renderer);
 	}
 
 	void GetDiskSpaceAvailable()

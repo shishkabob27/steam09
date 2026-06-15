@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using KGUI;
 using SteamKit2.Authentication;
 
 public class SteamGuardAuthenticator : IAuthenticator
@@ -8,21 +9,20 @@ public class SteamGuardAuthenticator : IAuthenticator
 	private TaskCompletionSource<string>? currentCodeTask;
 	private SteamGuardWindow? currentWindow;
 
-	// Thread-safe queue for window creation requests
 	private static readonly ConcurrentQueue<Action> windowCreationQueue = new();
 
 	/// <inheritdoc />
 	public Task<string> GetDeviceCodeAsync(bool previousCodeWasIncorrect)
 	{
+		Console.WriteLine("Received device code request...");
 		currentCodeTask = new TaskCompletionSource<string>();
 
-		// Queue window creation to be executed on main thread
 		windowCreationQueue.Enqueue(() =>
 		{
-			currentWindow = new SteamGuardWindow(Steam.Instance, "Steam Guard", 300, 150);
+			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetDeviceCodeMode();
-			Steam.Instance.PendingWindows.Add(currentWindow);
+			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		if (previousCodeWasIncorrect)
@@ -36,15 +36,15 @@ public class SteamGuardAuthenticator : IAuthenticator
 	/// <inheritdoc />
 	public Task<string> GetEmailCodeAsync(string email, bool previousCodeWasIncorrect)
 	{
+		Console.WriteLine("Received email code request...");
 		currentCodeTask = new TaskCompletionSource<string>();
 
-		// Queue window creation to be executed on main thread
 		windowCreationQueue.Enqueue(() =>
 		{
-			currentWindow = new SteamGuardWindow(Steam.Instance, "Steam Guard", 300, 150);
+			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetEmailMode(email);
-			Steam.Instance.PendingWindows.Add(currentWindow);
+			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		if (previousCodeWasIncorrect)
@@ -58,13 +58,14 @@ public class SteamGuardAuthenticator : IAuthenticator
 	/// <inheritdoc />
 	public Task<bool> AcceptDeviceConfirmationAsync()
 	{
-		// Queue window creation to show user they need to approve on mobile
+		Console.WriteLine("Received device confirmation request...");
+
 		windowCreationQueue.Enqueue(() =>
 		{
-			currentWindow = new SteamGuardWindow(Steam.Instance, "Steam Guard", 300, 150);
+			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetConfirmationMode();
-			Steam.Instance.PendingWindows.Add(currentWindow);
+			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		return Task.FromResult(true);

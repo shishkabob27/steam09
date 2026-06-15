@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstallGameWindow title="Install Game" width="450" height="460" resizable="false">
+	<SolidBackgroundControl backgroundColor="101, 106, 98" pinnedLeft="10" pinnedTop="10" pinnedRight="10" pinnedBottom="45"/>
+	<ButtonControl id="BackButton" pinnedRight="174" pinnedBottom="10" width="72" height="24" style="1"/>
+	<ButtonControl id="NextButton" pinnedRight="92" pinnedBottom="10" width="72" height="24" style="1"/>
+	<ButtonControl id="CancelButton" pinnedRight="10" pinnedBottom="10" width="72" height="24" style="1"/>
+</InstallGameWindow>

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using DepotDownloader;
+using KGUI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SteamKit2;
@@ -88,8 +89,8 @@ public partial class Steam
 		}
 
 		//reload game list
-		MainWindow mainWindow = (MainWindow)Windows.Find(x => x is MainWindow);
-		if (mainWindow != null) mainWindow.ReloadGameList = true;
+		MainWindow? mainWindow = WindowManager.Instance.GetWindows().Find(w => w is MainWindow) as MainWindow;
+		mainWindow?.ReloadGameList = true;
 	}
 
 
@@ -110,18 +111,20 @@ public partial class Steam
 			return;
 		}
 
-		LaunchOptionsWindow launchOptionsWindow = new LaunchOptionsWindow(this, Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name), 400, 200);
+		LaunchOptionsWindow launchOptionsWindow = new(this, "launchoptionswindow_" + game.AppID);
+		launchOptionsWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 		launchOptionsWindow.SetGame(game);
 		launchOptionsWindow.SetLaunchConfigs(launchConfigs);
-		PendingWindows.Add(launchOptionsWindow);
+		WindowManager.Instance.CreateWindow(launchOptionsWindow);
 	}
 
 	public void BeginLaunchGame(Game game, Tuple<string, string, string> launchConfig)
 	{
-		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name), 400, 200);
+		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, "preparingtolaunchwindow_" + game.AppID);
+		preparingToLaunchWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 		preparingToLaunchWindow.SetGame(game);
 		preparingToLaunchWindow.SetLaunchConfig(launchConfig);
-		PendingWindows.Add(preparingToLaunchWindow);
+		WindowManager.Instance.CreateWindow(preparingToLaunchWindow);
 	}
 
 	//Will launch the game with the given launch config
@@ -202,31 +205,7 @@ public partial class Steam
 				AppID = game.appid,
 			});
 
-			//download icon if not exists
 			Directory.CreateDirectory("appcache/librarycache/" + game.appid);
-			string icon = "appcache/librarycache/" + game.appid + "/icon.jpg";
-			if (!System.IO.File.Exists(icon))
-			{
-				try
-				{
-					if (game.img_icon_url == null || game.img_icon_url == "")
-					{
-						Console.WriteLine("No icon url found for game: " + game.appid);
-						continue;
-					}
-
-					string url = $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{game.appid}/{game.img_icon_url}.jpg";
-					Console.WriteLine("Downloading icon: " + url);
-					byte[] data = await client.GetByteArrayAsync(url);
-
-					System.IO.File.WriteAllBytes(icon, data);
-
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine("Failed to get icon: " + e.Message);
-				}
-			}
 		}
 
 		//get app info

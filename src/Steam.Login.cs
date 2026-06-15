@@ -1,3 +1,4 @@
+using KGUI;
 using Newtonsoft.Json;
 using SteamKit2;
 
@@ -123,7 +124,7 @@ public partial class Steam
 
 		if (!CheckWebApiKey())
 		{
-			PendingWindows.Add(new RequestWebAPIKeyWindow(this, $"STEAM - {CurrentUser.AccountName}", 300, 150, false));
+			WindowManager.Instance.CreateWindow(new RequestWebAPIKeyWindow(this, $"webapikeywindow"));
 			return;
 		}
 
@@ -142,8 +143,7 @@ public partial class Steam
 
 	public void ContinueLogin()
 	{
-		//create logging in window
-		PendingWindows.Add(new LoggingInWindow(this, "STEAM", 400, 100, false));
+		WindowManager.Instance.CreateWindow(new LoggingInWindow(this, "logging_in_window"));
 
 		//get games
 		GetGames();

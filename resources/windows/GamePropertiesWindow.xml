@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GamePropertiesWindow title="Install Game" width="516" height="400" resizable="false">
+	<TabListControl x="8" y="12" height="22">
+		<TabItemControl width="98" text="General" default="true"/>
+		<TabItemControl width="98" text="Updates"/>
+		<TabItemControl width="98" text="Local files"/>
+		<TabItemControl width="98" text="Language"/>
+	</TabListControl>
+	<SolidBackgroundControl backgroundColor="103, 106, 101" pinnedLeft="8" pinnedTop="34" pinnedRight="8" pinnedBottom="45"/>
+	<ButtonControl id="CloseButton" pinnedRight="10" pinnedBottom="10" width="72" height="24" style="1" onClick="OnCloseButtonClicked"/>
+</GamePropertiesWindow>

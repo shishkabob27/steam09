@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MainWindow title="#Steam_Root_Title" width="1000" height="660" resizable="true" minimumWidth="640" minimumHeight="480">
+	<TabListControl x="0" y="25" height="22">
+		<TabItemControl width="66" text="Store" onClick="OnStoreTabSelected"/>
+		<TabItemControl width="71" text="Community" />
+		<TabItemControl width="66" text="My games" default="true" onClick="OnMyGamesTabSelected"/>
+		<TabItemControl width="66" text="My media"/>
+		<TabItemControl width="66" text="Tools"/>
+	</TabListControl>
+	<SolidBackgroundControl backgroundColor="104, 106, 101" pinnedLeft="0" pinnedRight="0" pinnedTop="47" height="22" />
+	<SolidBackgroundControl backgroundColor="73, 78, 73" pinnedLeft="0" pinnedRight="0" pinnedTop="69" pinnedBottom="116">
+		<ListViewControl id="LibraryList" pinnedLeft="0" pinnedTop="0" pinnedBottom="0" pinnedRight="0"/>
+	</SolidBackgroundControl>
+	<SolidBackgroundControl backgroundColor="104, 106, 101" pinnedLeft="0" pinnedRight="0" pinnedBottom="77" height="39" >
+		<ButtonControl id="GameActionButton" pinnedRight="10" pinnedTop="7" width="98" height="24"/>
+		<ButtonControl id="PropertiesButton" pinnedRight="116" pinnedTop="7" width="98" height="24"/>
+	</SolidBackgroundControl>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="31" width="100" height="52" homeIndex="0"/>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="144" width="100" height="52" homeIndex="1"/>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="265" width="100" height="52" homeIndex="2"/>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="384" width="100" height="52" homeIndex="3"/>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="504" width="100" height="52" homeIndex="4"/>
+</MainWindow>

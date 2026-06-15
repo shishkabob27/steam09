@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LoginWindow title="#Steam_Login_Title" width="420" height="300" resizable="false">
+	<LabelControl x="10" y="68" width="104" height="24" text="Account name" textAlignment="east"/>
+	<TextEntryControl id="UserNameEdit" x="121" y="68" width="238" height="24" tabPosition="1" textHidden="false" maxChars="128" />
+	<LabelControl x="10" y="102" width="104" height="24" text="Password" textAlignment="east"/>
+	<TextEntryControl id="PasswordEdit" x="121" y="102" width="238" height="24" tabPosition="2" textHidden="true" maxChars="128" />
+
+	<CheckboxControl id="RememberPasswordCheckbox" x="118" y="132" width="285" height="24" text="Remember my password" tabPosition="3"/>
+
+	<ButtonControl id="LoginButton" x="120" y="164" width="80" height="24" style="1" tabPosition="4" text="Login" onClick="AttemptSteamLogin" />
+	<ButtonControl id="CancelButton" x="205" y="164" width="84" height="24" style="1" tabPosition="5" text="Cancel" onClick="OnCancel" />
+
+	<DividerControl x="20" y="202" width="380" height="3" />
+
+	<ButtonControl id="CreateNewAccountButton" x="228" y="220" width="174" height="24" style="1" tabPosition="6" text="Create a new account... " onClick="OnCreateNewAccount" />
+	<ButtonControl id="RetrieveLostAccountButton" x="228" y="252" width="174" height="24" style="1" tabPosition="7" text="Retrieve a lost account..." onClick="OnLostPassword" />
+
+	<LabelControl x="11" y="220" width="210" height="24" text="Don't have a Steam account?" textAlignment="east"/>
+	<LabelControl x="11" y="252" width="210" height="24" text="Forgot your login info?" textAlignment="east"/>
+</LoginWindow>

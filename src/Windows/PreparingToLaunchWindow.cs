@@ -1,4 +1,5 @@
-using SDL_Sharp;
+using System.Drawing;
+using KGUI;
 
 public class PreparingToLaunchWindow : SteamWindow
 {
@@ -7,7 +8,8 @@ public class PreparingToLaunchWindow : SteamWindow
 
 	float time = 0;
 	bool done = false;
-	public PreparingToLaunchWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+
+	public PreparingToLaunchWindow(Steam steam, string uuid) : base(steam, uuid)
 	{
 	}
 
@@ -29,8 +31,8 @@ public class PreparingToLaunchWindow : SteamWindow
 
 		if (time > 1 && !done)
 		{
-			steam.LaunchGameProcess(game, launchConfig);
-			steam.PendingWindowsToRemove.Add(this);
+			client.LaunchGameProcess(game, launchConfig);
+			WindowManager.Instance.CloseWindow(this);
 			done = true;
 		}
 	}
@@ -40,8 +42,6 @@ public class PreparingToLaunchWindow : SteamWindow
 		base.Draw();
 
 		int stage = (int)Math.Min((time * 3) + 1, 3);
-		panel.DrawText(Localization.GetString($"SteamUI_JoinDialog_PreparingToPlay{stage}").Replace("%s1", game.Name), 28, 48, new Color(230, 236, 224, 255));
-
-		SDL.RenderPresent(renderer);
+		panel.DrawText(Localization.GetString($"SteamUI_JoinDialog_PreparingToPlay{stage}").Replace("%s1", game.Name), 28, 48, Color.FromArgb(230, 236, 224));
 	}
 }

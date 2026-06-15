@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using SDL_Sharp;
+using KGUI;
 using SteamKit2;
 using SteamKit2.Authentication;
 
@@ -8,60 +8,54 @@ public class LoginWindow : SteamWindow
 	TextEntryControl UsernameEdit;
 	TextEntryControl PasswordEdit;
 
-	CheckButtonControl RememberPasswordButton;
+	CheckboxControl RememberPasswordCheckbox;
 
 	ButtonControl LoginButton;
-	ButtonControl CancelButton;
-
-	ButtonControl CreateNewAccountButton;
-	ButtonControl LostPasswordButton;
-
 
 	bool isLoggingIn = false;
-	public AuthSession authSession;
+	private AuthSession _authSession;
 
-	public LoginWindow(Steam steam, string title, int width, int height, bool resizable = false, int minimumWidth = 0, int minimumHeight = 0) : base(steam, title, width, height, resizable, minimumWidth, minimumHeight)
+	public LoginWindow(Steam client, string uuid) : base(client, uuid)
 	{
-		panel.LoadUILayout("SteamLoginDialog.res");
+		UsernameEdit = panel.GetControlByID<TextEntryControl>("UserNameEdit");
+		PasswordEdit = panel.GetControlByID<TextEntryControl>("PasswordEdit");
+	
+		LoginButton = panel.GetControlByID<ButtonControl>("LoginButton");
+
+		RememberPasswordCheckbox = panel.GetControlByID<CheckboxControl>("RememberPasswordCheckbox");
 
 		Steam.Instance.manager.Subscribe<SteamClient.ConnectedCallback>(OnConnected);
 		Steam.Instance.manager.Subscribe<SteamClient.DisconnectedCallback>(OnDisconnected);
-
-		UsernameEdit = panel.GetControl<TextEntryControl>("UserNameEdit");
-		PasswordEdit = panel.GetControl<TextEntryControl>("PasswordEdit");
-		RememberPasswordButton = panel.GetControl<CheckButtonControl>("SavePasswordCheck");
-		LoginButton = panel.GetControl<ButtonControl>("LoginButton");
-		CancelButton = panel.GetControl<ButtonControl>("CancelButton");
-		CreateNewAccountButton = panel.GetControl<ButtonControl>("CreateNewAccountButton");
-		LostPasswordButton = panel.GetControl<ButtonControl>("LostPasswordButton");
-
-		LoginButton.OnClick += AttemptSteamLogin;
-		CancelButton.OnClick += () => Steam.Instance.PendingWindowsToRemove.Add(this);
-
-		CreateNewAccountButton.OnClick += () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://store.steampowered.com/join/") { UseShellExecute = true });
-		LostPasswordButton.OnClick += () => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://help.steampowered.com/en/wizard/HelpWithLogin") { UseShellExecute = true });
 	}
 
 	public override void Update(float deltaTime)
 	{
 		base.Update(deltaTime);
 
-
 		UsernameEdit.enabled = !isLoggingIn;
 		PasswordEdit.enabled = !isLoggingIn;
 		LoginButton.enabled = !isLoggingIn && !string.IsNullOrWhiteSpace(UsernameEdit.text) && !string.IsNullOrWhiteSpace(PasswordEdit.text);
-		RememberPasswordButton.enabled = !isLoggingIn;
+		RememberPasswordCheckbox.enabled = !isLoggingIn;
 	}
 
-	public override void Draw()
+	void OnCancel()
 	{
-		base.Draw();
+		WindowManager.Instance.CloseWindow(this);
+	}
 
-		SDL.RenderPresent(renderer);
+	void OnCreateNewAccount()
+	{
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://store.steampowered.com/join/") { UseShellExecute = true });
+	}
+
+	void OnLostPassword()
+	{
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://help.steampowered.com/en/wizard/HelpWithLogin") { UseShellExecute = true });
 	}
 
 	void AttemptSteamLogin()
 	{
+		Console.WriteLine($"Attempting login for user '{UsernameEdit.text}'");
 		isLoggingIn = true;
 		Steam.Instance.steamClient.Connect();
 	}
@@ -78,24 +72,19 @@ public class LoginWindow : SteamWindow
 		{
 			try
 			{
-				authSession = await Steam.Instance.steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails()
+				Console.WriteLine("Connected to Steam, starting authentication...");
+
+				_authSession = await Steam.Instance.steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails()
 				{
 					Username = UsernameEdit.text,
 					Password = PasswordEdit.text,
 					Authenticator = new SteamGuardAuthenticator(),
-					IsPersistentSession = RememberPasswordButton.selected,
+					IsPersistentSession = RememberPasswordCheckbox.selected,
 				});
 
-				var pollResponse = await authSession.PollingWaitForResultAsync();
+				var pollResponse = await _authSession.PollingWaitForResultAsync();
 
-				//find steamguard window and des
-				foreach (var window in Steam.Instance.Windows)
-				{
-					if (window is SteamGuardWindow)
-					{
-						Steam.Instance.PendingWindowsToRemove.Add(window);
-					}
-				}
+				WindowManager.Instance.CloseWindow<SteamGuardWindow>();
 
 				// Logon to Steam with the access token we have received
 				// Note that we are using RefreshToken for logging on here
@@ -103,13 +92,13 @@ public class LoginWindow : SteamWindow
 				{
 					Username = pollResponse.AccountName,
 					AccessToken = pollResponse.RefreshToken,
-					ShouldRememberPassword = RememberPasswordButton.selected,
+					ShouldRememberPassword = RememberPasswordCheckbox.selected,
 					LoginID = 0x73743039,
 				});
 
 				Steam.Instance.CurrentUser = new User(0, pollResponse.AccountName, "", "", pollResponse.RefreshToken);
 
-				Steam.Instance.PendingWindowsToRemove.Add(this);
+				WindowManager.Instance.CloseWindow(this);
 			}
 			catch (System.Exception e)
 			{

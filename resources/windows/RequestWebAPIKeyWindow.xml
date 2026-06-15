@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RequestWebAPIKeyWindow title="Web API Key" width="300" height="150" resizable="false">
+	<LabelControl id="messageLabel" text="Please enter your Steam Web API key." x="11" y="24" width="280" height="24" />
+	<TextEntryControl id="apiKeyTextBox" x="20" y="80" width="260" height="24" maxLength="32" onEnterPressed="OnEnterButtonClick" />
+	<ButtonControl id="retrieveButton" text="Retrieve Key" x="20" y="110" width="125" height="24" onClick="OnRetrieveButtonClick" />
+	<ButtonControl id="enterButton" text="Enter" x="155" y="110" width="125" height="24" onClick="OnEnterButtonClick" />
+</RequestWebAPIKeyWindow>

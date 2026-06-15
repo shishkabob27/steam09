@@ -136,15 +136,15 @@ public partial class Steam
 				steamApps.PICSGetProductInfo(pICSRequest, null, false);
 			}
 
-			FriendsWindow friendsWindow = (FriendsWindow)Windows.Find(x => x is FriendsWindow);
-			if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
+			// FriendsWindow friendsWindow = (FriendsWindow)Windows.Find(x => x is FriendsWindow);
+			// if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
 
-			//find chat window with friend
-			ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == callback.FriendID.ConvertToUInt64());
-			if (chatWindow != null)
-			{
-				chatWindow.UpdateFriendItemControl(friend);
-			}
+			// //find chat window with friend
+			// ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == callback.FriendID.ConvertToUInt64());
+			// if (chatWindow != null)
+			// {
+			// 	chatWindow.UpdateFriendItemControl(friend);
+			// }
 		}
 	}
 
@@ -159,11 +159,11 @@ public partial class Steam
 		{
 			friend.GamePlayedName = app.Value.KeyValues["common"]["name"].Value ?? "";
 
-			FriendsWindow friendsWindow = (FriendsWindow)Windows.Find(x => x is FriendsWindow);
-			if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
+			// FriendsWindow friendsWindow = (FriendsWindow)Windows.Find(x => x is FriendsWindow);
+			// if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
 
-			ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == friend.SteamID);
-			if (chatWindow != null) chatWindow.UpdateFriendItemControl(friend);
+			// ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == friend.SteamID);
+			// if (chatWindow != null) chatWindow.UpdateFriendItemControl(friend);
 		}
 	}
 
@@ -194,11 +194,11 @@ public partial class Steam
 		});
 
 		//find chat window with friend
-		ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == callback.Sender.ConvertToUInt64());
-		if (chatWindow != null)
-		{
-			chatWindow.CreateMessageControl(chatHistory.Messages.Last());
-		}
+		// ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == callback.Sender.ConvertToUInt64());
+		// if (chatWindow != null)
+		// {
+		// 	chatWindow.CreateMessageControl(chatHistory.Messages.Last());
+		// }
 	}
 
 	void OnFriendMsgHistory(SteamFriends.FriendMsgHistoryCallback callback)

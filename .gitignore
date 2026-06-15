@@ -493,3 +493,4 @@ config/
 *.ini
 account.json
 app_info.txt
+/webcache
