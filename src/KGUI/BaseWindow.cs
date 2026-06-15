@@ -298,16 +298,9 @@ namespace KGUI
 		{
 			unsafe
 			{
-				int totalWidth = width;
-				int totalHeight = height;
-				if (accountForWindowDecorations && useCustomWindowDecorations)
-				{
-					totalWidth += WindowBorderSize * 2;
-					totalHeight += WindowBorderSize + TitleBarHeight;
-				}
-				if (UpdateWindow) SDL3.SDL_SetWindowSize(window, totalWidth, totalHeight);
-				mWidth = totalWidth;
-				mHeight = totalHeight;
+				if (UpdateWindow) SDL3.SDL_SetWindowSize(window, width, height);
+				mWidth = width;
+				mHeight = height;
 			}
 		}
 
