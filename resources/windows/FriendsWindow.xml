@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FriendsWindow title="Friends" width="300" height="500" resizable="true" minimumWidth="300" minimumHeight="500">
+	<SolidBackgroundControl pinnedLeft="0" pinnedRight="0" pinnedTop="0" pinnedBottom="0" backgroundColor="36, 38, 35"/>
+	<ImageControl pinnedLeft="0" pinnedRight="0" pinnedTop="0" height="90" scaleMode="LoopX" path="graphics/FriendsListSlantBG.png" /> 
+	<ListViewControl id="friendListControl" pinnedLeft="0" pinnedTop="0" pinnedBottom="0" pinnedRight="0"/>
+</FriendsWindow>

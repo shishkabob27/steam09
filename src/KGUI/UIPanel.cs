@@ -118,6 +118,8 @@ namespace KGUI
 				}
 			}
 
+			control.OnAttributesDeserialized();
+
 			parentControl.AddChild(control);
 
 			if (control.ID != "")
@@ -207,7 +209,21 @@ namespace KGUI
 				return string.Equals(xmlName, attribute.Name, StringComparison.OrdinalIgnoreCase);
 			});
 			if (field == null) return;
-			object convertedValue = Convert.ChangeType(attribute.InnerText, field.FieldType);
+			object convertedValue = null;
+			Type targetType = field.FieldType;
+			Type underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+			if (underlyingType.IsEnum)
+			{
+				if (int.TryParse(attribute.InnerText, out int enumInt))
+					convertedValue = Enum.ToObject(underlyingType, enumInt);
+				else
+					convertedValue = Enum.Parse(underlyingType, attribute.InnerText, true);
+			}
+			else
+			{
+				convertedValue = Convert.ChangeType(attribute.InnerText, underlyingType);
+			}
+
 			field.SetValue(control, convertedValue);
 		}
 

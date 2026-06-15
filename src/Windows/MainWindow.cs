@@ -7,13 +7,6 @@ public class MainWindow : SteamWindow
 {
 	unsafe SDL_Texture* ResizeTexture;
 
-	// Texture BottomButtonsTexture;
-	// RootBottomButtonControl NewsButton;
-	// RootBottomButtonControl FriendsButton;
-	// RootBottomButtonControl ServersButton;
-	// RootBottomButtonControl SettingsButton;
-	// RootBottomButtonControl SupportButton;
-
 	bool inBrowserWindow = false;
 	bool browserInitialized = false;
 	Browser browser;
@@ -85,20 +78,6 @@ public class MainWindow : SteamWindow
 		GameActionButton = panel.GetControlByID<ButtonControl>("GameActionButton");
 		PropertiesButton = panel.GetControlByID<ButtonControl>("PropertiesButton");
 
-	// 	FriendsButton.OnClick = () =>
-	// 	{
-	// 		//if the friends window is already open, just focus it
-	// 		if (steam.PendingWindows.Any(x => x is FriendsWindow) || steam.Windows.Any(x => x is FriendsWindow))
-	// 		{
-	// 			steam.PendingWindows.Find(x => x is FriendsWindow)?.FocusWindow();
-	// 			steam.Windows.Find(x => x is FriendsWindow)?.FocusWindow();
-	// 			return;
-	// 		}
-
-	// 		FriendsWindow friendsWindow = new FriendsWindow(steam, $"Friends - {steam.CurrentUser.AccountName}", 300, 500, true);
-	// 		steam.PendingWindows.Add(friendsWindow);
-	// 	};
-
 	 	CreateControls();
 	 	LoadFavorites();
 	}
@@ -151,6 +130,19 @@ public class MainWindow : SteamWindow
 		gameList.visible = true;
 
 		//topBarBackground.height = 22;
+	}
+
+	void OnFriendsButtonClicked()
+	{
+		if (WindowManager.Instance.IsWindowOpen<FriendsWindow>($"friends"))
+		{
+			WindowManager.Instance.HighlightWindow<FriendsWindow>($"friends");
+			return;
+		}
+
+		FriendsWindow friendsWindow = new FriendsWindow(client, "friends");
+		friendsWindow.SetTitle($"Friends - {client.CurrentUser.AccountName}");
+		WindowManager.Instance.CreateWindow(friendsWindow);
 	}
 
 	~MainWindow()

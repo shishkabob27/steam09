@@ -106,7 +106,7 @@ namespace KGUI
 			for (int pass = 0; pass < 8; pass++)
 			{
 				bool narrow = EnableScrollbar && CalculateContentHeight() > height;
-				int inner = width - (narrow ? 19 : 0);
+				int inner = width - (narrow ? SCROLLBAR_WIDTH : 0);
 				if (inner == prevInner) break;
 				prevInner = inner;
 				foreach (var child in _children.Where(c => !c.ManualDraw))

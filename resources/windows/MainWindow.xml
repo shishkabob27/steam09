@@ -16,7 +16,7 @@
 		<ButtonControl id="PropertiesButton" pinnedRight="116" pinnedTop="7" width="98" height="24"/>
 	</SolidBackgroundControl>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="31" width="100" height="52" homeIndex="0"/>
-	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="144" width="100" height="52" homeIndex="1"/>
+	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="144" width="100" height="52" homeIndex="1" onClick="OnFriendsButtonClicked"/>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="265" width="100" height="52" homeIndex="2"/>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="384" width="100" height="52" homeIndex="3"/>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="504" width="100" height="52" homeIndex="4"/>
