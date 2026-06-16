@@ -143,17 +143,6 @@ namespace KGUI
 		{
 		}
 
-		public void DrawChildren()
-		{
-			if (visible == false) return;
-			foreach (var child in _children)
-			{
-				if (child.ManualDraw || child.visible == false) continue;
-				child.Draw();
-				child.DrawChildren();
-			}
-		}
-
 		public void DrawBorder()
 		{
 			Color borderColor = Color.Transparent;

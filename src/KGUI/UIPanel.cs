@@ -372,33 +372,38 @@ namespace KGUI
 
 		public void Draw()
 		{
-			//clip
 			ClipDrawToWindow();
-			//this sucks
-			foreach (var child in RootControl.Children)
-			{
-				if (!child.visible) continue;
-				ClipDrawToControl(child);
-				child.DrawBackground();
-			}
-
-			foreach (var child in RootControl.Children)
-			{
-				if (!child.visible) continue;
-
-				ClipDrawToControl(child);
-				child.Draw();
-				child.DrawChildren();
-			}
-
-			
-			foreach (var child in RootControl.Children)
-			{
-				if (!child.visible) continue;
-				ClipDrawToControl(child, border: true);
-				child.DrawBorder();
-			}
+			DrawControlAndChildren(RootControl);
 			ClearClip();
+		}
+
+		void DrawControlAndChildren(UIControl control)
+		{
+			if (control.ManualDraw || !control.visible) return;
+			if (control.parent != null)
+			{
+				if (control.x + control.width < 0 || control.x > control.parent.width || control.y + control.height < 0 || control.y > control.parent.height) return;
+			}
+
+			SDL_Rect previousClip;
+			unsafe
+			{
+				SDL3.SDL_GetRenderClipRect(window.renderer, &previousClip);
+			}
+
+			if (ClipDrawToControl(control, previousClip))
+			{
+				control.Draw();
+				foreach (var child in control.Children)
+				{
+					DrawControlAndChildren(child);
+				}
+			}
+
+			unsafe
+			{
+				SDL3.SDL_SetRenderClipRect(window.renderer, &previousClip);
+			}
 		}
 
 		public void ClipDrawToWindow()
@@ -413,23 +418,40 @@ namespace KGUI
 			}
 		}
 
-		public void ClipDrawToControl(UIControl control, bool border = false)
+		public bool ClipDrawToControl(UIControl control, SDL_Rect previousClip, bool border = false)
 		{
-			SDL_Rect clipRect = new SDL_Rect();
-			clipRect.x = control.GetAbsoluteX();
-			clipRect.y = control.GetAbsoluteY();
-			clipRect.w = control.width;
-			clipRect.h = control.height;
+			SDL_Rect requestedClip = new SDL_Rect();
+			requestedClip.x = control.GetAbsoluteX();
+			requestedClip.y = control.GetAbsoluteY();
+			requestedClip.w = control.width;
+			requestedClip.h = control.height;
+
 			if (border)
 			{
-				clipRect.x -= 1;
-				clipRect.y -= 1;
-				clipRect.w += 2;
-				clipRect.h += 2;
+				requestedClip.x -= 1;
+				requestedClip.y -= 1;
+				requestedClip.w += 2;
+				requestedClip.h += 2;
 			}
-			unsafe {
-				SDL3.SDL_SetRenderClipRect(window.renderer, &clipRect);
+
+			int x1 = Math.Max(requestedClip.x, previousClip.x);
+			int y1 = Math.Max(requestedClip.y, previousClip.y);
+			int x2 = Math.Min(requestedClip.x + requestedClip.w, previousClip.x + previousClip.w);
+			int y2 = Math.Min(requestedClip.y + requestedClip.h, previousClip.y + previousClip.h);
+
+			SDL_Rect finalClip = new SDL_Rect();
+			finalClip.x = x1;
+			finalClip.y = y1;
+
+			finalClip.w = Math.Max(0, x2 - x1);
+			finalClip.h = Math.Max(0, y2 - y1);
+
+			unsafe
+			{
+				SDL3.SDL_SetRenderClipRect(window.renderer, &finalClip);
 			}
+
+			return finalClip.w > 0 && finalClip.h > 0;
 		}
 
 		public void ClearClip()
