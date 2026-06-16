@@ -485,14 +485,14 @@ public class MainWindow : SteamWindow
 			}
 		}
 
-		File.WriteAllText($"userdata/{client.CurrentUser.SteamID}/config/favorites.json", JsonConvert.SerializeObject(favoriteAppIds));
+		File.WriteAllText(Utils.GetAbsolutePath($"userdata/{client.CurrentUser.SteamID}/config/favorites.json"), JsonConvert.SerializeObject(favoriteAppIds));
 	}
 
 	void LoadFavorites()
 	{
-		if (File.Exists($"userdata/{client.CurrentUser.SteamID}/config/favorites.json"))
+		if (File.Exists(Utils.GetAbsolutePath($"userdata/{client.CurrentUser.SteamID}/config/favorites.json")))
 		{
-			string favoritesJson = File.ReadAllText($"userdata/{client.CurrentUser.SteamID}/config/favorites.json");
+			string favoritesJson = File.ReadAllText(Utils.GetAbsolutePath($"userdata/{client.CurrentUser.SteamID}/config/favorites.json"));
 			List<int> favoriteAppIds = JsonConvert.DeserializeObject<List<int>>(favoritesJson);
 			foreach (var appId in favoriteAppIds)
 			{

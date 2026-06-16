@@ -4,6 +4,12 @@ using SteamKit2;
 
 public static class Utils
 {
+	public static string GetAbsolutePath(string relativePath)
+	{
+		string basePath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + System.IO.Path.DirectorySeparatorChar + relativePath;
+		return Path.GetFullPath(basePath);
+	}
+	
 	public static string AsTimeAgo(this DateTime dateTime)
 	{
 		TimeSpan timeSpan = DateTime.Now.Subtract(dateTime);

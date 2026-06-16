@@ -28,9 +28,9 @@ namespace KGUI
 
         public RemoteImageControl(UIControl parent) : base(parent)
 		{
-			if (!Directory.Exists(cacheFolder))
+			if (!Directory.Exists(Utils.GetAbsolutePath(cacheFolder)))
 			{
-				Directory.CreateDirectory(cacheFolder);
+				Directory.CreateDirectory(Utils.GetAbsolutePath(cacheFolder));
 			}
 		}
 
@@ -78,7 +78,7 @@ namespace KGUI
             }
 
 
-            string cachePath = Path.Combine(cacheFolder, cleanURL(imageUrl) + ".png");
+            string cachePath = Path.Combine(Utils.GetAbsolutePath(cacheFolder), cleanURL(imageUrl) + ".png");
 
             // load the cached image immediately if available and not still downloading
             if (File.Exists(cachePath) && !inProgressDownloads.ContainsKey(cachePath))
@@ -143,7 +143,7 @@ namespace KGUI
                 }
 
                 var imageBytes = await response.Content.ReadAsByteArrayAsync();
-                Directory.CreateDirectory(cacheFolder);
+                Directory.CreateDirectory(Utils.GetAbsolutePath(cacheFolder));
                 await File.WriteAllBytesAsync(cachePath, imageBytes);
                 return true;
             }

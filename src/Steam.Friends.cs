@@ -11,11 +11,12 @@ public partial class Steam
 	{
 		try
 		{
+			Directory.CreateDirectory(Utils.GetAbsolutePath("webcache/avatars"));
 			//see if an avatar already exists for each steamid
 			List<ulong> steamIDsToRemove = new List<ulong>();
 			foreach (ulong steamID in steamIDs)
 			{
-				if (File.Exists("config/avatarcache/" + steamID + "_32.jpg")) steamIDsToRemove.Add(steamID);
+				if (File.Exists(Utils.GetAbsolutePath($"webcache/avatars/{steamID}_32.jpg"))) steamIDsToRemove.Add(steamID);
 			}
 
 			//remove the steamids that already have an avatar
@@ -55,7 +56,7 @@ public partial class Steam
 					{
 						byte[] data = await ImageResponse.Content.ReadAsByteArrayAsync();
 						//save to file
-						File.WriteAllBytes($"config/avatarcache/{avatar.steamid}_{size}.jpg", data);
+						File.WriteAllBytes(Utils.GetAbsolutePath($"webcache/avatars/{avatar.steamid}_{size}.jpg"), data);
 					}
 				}
 			}
@@ -69,7 +70,7 @@ public partial class Steam
 
 	public string GetAvatarPath(ulong steamID, AvatarSize size)
 	{
-		if (File.Exists($"config/avatarcache/{steamID}_{(int)size}.jpg")) return $"config/avatarcache/{steamID}_{(int)size}.jpg";
+		if (File.Exists(Utils.GetAbsolutePath($"webcache/avatars/{steamID}_{(int)size}.jpg"))) return Utils.GetAbsolutePath($"webcache/avatars/{steamID}_{(int)size}.jpg");
 
 		//if not, return default avatar
 		if (size == AvatarSize.Small) return "resources/graphics/avatar_32blank.png";

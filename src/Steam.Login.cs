@@ -9,13 +9,13 @@ public partial class Steam
 		List<User> users = new List<User>();
 
 		//check if config/loginusers.vdf exists
-		if (File.Exists("config/loginusers.json"))
+		if (File.Exists(Utils.GetAbsolutePath("config/loginusers.json")))
 		{
-			users = JsonConvert.DeserializeObject<List<User>>(File.ReadAllText("config/loginusers.json"));
+			users = JsonConvert.DeserializeObject<List<User>>(File.ReadAllText(Utils.GetAbsolutePath("config/loginusers.json"))) ?? new List<User>();
 		}
 		else
 		{
-			File.WriteAllText("config/loginusers.json", "[]");
+			File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), "[]");
 		}
 
 		return users;
@@ -33,23 +33,23 @@ public partial class Steam
 		}
 
 		users.Add(user);
-		File.WriteAllText("config/loginusers.json", JsonConvert.SerializeObject(users, Formatting.Indented));
+		File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), JsonConvert.SerializeObject(users, Formatting.Indented));
 
-		Directory.CreateDirectory($"userdata/{user.SteamID}");
-		Directory.CreateDirectory($"userdata/{user.SteamID}/config");
+		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}"));
+		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}/config"));
 	}
 
 	void RemoveLoginUser(User user)
 	{
 		List<User> users = GetPreviousLoginUsers();
 		users.Remove(user);
-		File.WriteAllText("config/loginusers.json", JsonConvert.SerializeObject(users, Formatting.Indented));
+		File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), JsonConvert.SerializeObject(users, Formatting.Indented));
 	}
 
 	public void ModifyLoginUser(User user)
 	{
 		//read file
-		string usersJson = File.ReadAllText("config/loginusers.json");
+		string usersJson = File.ReadAllText(Utils.GetAbsolutePath("config/loginusers.json"));
 		dynamic users = JsonConvert.DeserializeObject(usersJson);
 
 		//find user
@@ -73,7 +73,7 @@ public partial class Steam
 		}
 
 		//write file
-		File.WriteAllText("config/loginusers.json", JsonConvert.SerializeObject(users, Formatting.Indented));
+		File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), JsonConvert.SerializeObject(users, Formatting.Indented));
 	}
 
 	bool AttemptCachedLogin()

@@ -22,7 +22,7 @@ public partial class Steam
 			return;
 		}
 
-		Console.WriteLine("Got {0} licenses for account!", licenseList.LicenseList.Count);
+		Console.WriteLine("Got {0} licenses for account! Waiting for package info...", licenseList.LicenseList.Count);
 		AppLicenses = licenseList.LicenseList;
 
 		List<SteamApps.PICSRequest> PackageRequests = new List<SteamApps.PICSRequest>();
@@ -59,6 +59,8 @@ public partial class Steam
 			}
 		}
 
+		Console.WriteLine($"Retrieved info for {appids.Distinct().Count()} unique apps. Waiting for access tokens...");
+
 		//get access tokens for apps
 		var accessTokens = await steamApps.PICSGetAccessTokens(appids, []);
 		Dictionary<uint, ulong> appTokens = new Dictionary<uint, ulong>();
@@ -66,6 +68,8 @@ public partial class Steam
 		{
 			appTokens[token.Key] = token.Value;
 		}
+
+		Console.WriteLine("Got access tokens for apps! Waiting for app info...");
 
 		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, appTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
 
@@ -79,8 +83,8 @@ public partial class Steam
 				{
 					allRetrievedAppIds.Add(app.Value.ID.ToString());
 
-					Directory.CreateDirectory($"appcache/librarycache/{app.Value.ID}");
-					app.Value.KeyValues.SaveToFile($"appcache/librarycache/{app.Value.ID}/appinfo.vdf", false);
+					Directory.CreateDirectory(Utils.GetAbsolutePath($"appcache/librarycache/{app.Value.ID}"));
+					app.Value.KeyValues.SaveToFile(Utils.GetAbsolutePath($"appcache/librarycache/{app.Value.ID}/appinfo.vdf"), false);
 
 					//update app if it exist
 					if (Games.Any(g => g.AppID == app.Value.ID))
@@ -103,12 +107,14 @@ public partial class Steam
 
 		//save to users games.json
 		string gamesJson = JsonConvert.SerializeObject(allRetrievedAppIds, Formatting.None);
-		File.WriteAllText($"userdata/{steamClient?.SteamID?.ConvertToUInt64() ?? 0}/games.json", gamesJson);
+		File.WriteAllText(Utils.GetAbsolutePath($"userdata/{steamClient?.SteamID?.ConvertToUInt64() ?? 0}/games.json"), gamesJson);
 
 		foreach (Game game in Games)
 		{
 			game.Status = game.IsInstalled() ? GameStatus.Installed : GameStatus.NotInstalled;
 		}
+
+		Console.WriteLine("App info retrieved for all apps! Waiting for main window.");
 
 		if (mainwindowState == 0) // if main window is not loaded, load it
 		{
@@ -152,7 +158,7 @@ public partial class Steam
 
 		game.Status = GameStatus.Downloading;
 
-		string installDir = Path.Combine("steamapps", "common", game.InstallFolderName);
+		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", game.InstallFolderName));
 		ContentDownloader.Config.InstallDirectory = installDir;
 
 		try
@@ -161,7 +167,7 @@ public partial class Steam
 			game.Status = GameStatus.Installed;
 
 			//create dummy file to indicate game is installed
-			File.Create(Path.Combine("steamapps", $"{appID}.installed"));
+			File.Create(Utils.GetAbsolutePath(Path.Combine("steamapps", $"{appID}.installed"))).Close();
 		}
 		catch (Exception e)
 		{
@@ -213,13 +219,13 @@ public partial class Steam
 	{
 		SetupGameEnvironmentVariables(game.AppID);
 
-		Console.WriteLine($"Launching \"{Path.GetFullPath(Environment.CurrentDirectory + "/steamapps/common/" + game.InstallFolderName.ToLower() + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
+		Console.WriteLine($"Launching \"{Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName.ToLower() + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
 
 		ProcessStartInfo startInfo = new ProcessStartInfo();
 
 		//Get absolute path of install dir
-		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + game.InstallFolderName.ToLower()));
-		startInfo.WorkingDirectory = installDir;
+		string installDir = Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName.ToLower());
+		startInfo.WorkingDirectory = installDir + Path.DirectorySeparatorChar + launchConfig.WorkingDirectory;
 		startInfo.FileName = installDir + "/" + launchConfig.Executable;
 		startInfo.Arguments = launchConfig.Arguments;
 		startInfo.WindowStyle = ProcessWindowStyle.Normal;

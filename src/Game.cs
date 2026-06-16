@@ -197,7 +197,7 @@ public class Game
 				//if this launch config is the only one, then add it
 				if (appInfo["config"]?["launch"]?.Children.Count == 1)
 				{
-					launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", string.Empty));
+					launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", launch["workingdir"]?.AsString() ?? "", string.Empty));
 					return launchConfigs;
 				}
 
@@ -221,7 +221,7 @@ public class Game
 				//check if the executable exists
 				if (launch["executable"] == null || string.IsNullOrEmpty(launch["executable"].AsString())) continue;
 
-				launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", launch["description"]?.AsString() ?? Localization.GetString("Steam_LaunchOption_Game").Replace("%game%", Name)));
+				launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", launch["workingdir"]?.AsString() ?? "", launch["description"]?.AsString() ?? Localization.GetString("Steam_LaunchOption_Game").Replace("%game%", Name)));
 			}
 			catch (Exception e)
 			{
@@ -236,11 +236,11 @@ public class Game
 	public bool IsInstalled()
 	{
 		//check if the install dir exists
-		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + InstallFolderName.ToLower()));
+		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", InstallFolderName.ToLower()));
 		if (!Directory.Exists(installDir)) return false;
 
 		//check if <appid>.installed exists
-		string installedFile = Path.Combine("steamapps", $"{AppID}.installed");
+		string installedFile = Utils.GetAbsolutePath(Path.Combine("steamapps", $"{AppID}.installed"));
 		if (!File.Exists(installedFile)) return false;
 
 		return true;
@@ -251,12 +251,14 @@ public class LaunchConfig
 {
 	public string Executable { get; set; }
 	public string Arguments { get; set; }
+	public string WorkingDirectory { get; set; }
 	public string Description { get; set; }
 
-	public LaunchConfig(string executable, string arguments, string description)
+	public LaunchConfig(string executable, string arguments, string workingDirectory, string description)
 	{
 		Executable = executable;
 		Arguments = arguments;
+		WorkingDirectory = workingDirectory;
 		Description = description;
 	}
 }

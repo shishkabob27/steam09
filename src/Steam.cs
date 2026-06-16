@@ -84,14 +84,14 @@ public partial class Steam
 
 	void CreateDirectories()
 	{
-		Directory.CreateDirectory("appcache");
-		Directory.CreateDirectory("appcache/librarycache");
+		Directory.CreateDirectory(Utils.GetAbsolutePath("appcache"));
+		Directory.CreateDirectory(Utils.GetAbsolutePath("appcache/librarycache"));
 
-		Directory.CreateDirectory("config");
-		Directory.CreateDirectory("config/avatarcache");
+		Directory.CreateDirectory(Utils.GetAbsolutePath("config"));
+		Directory.CreateDirectory(Utils.GetAbsolutePath("config/avatarcache"));
 
-		Directory.CreateDirectory("steamapps");
-		Directory.CreateDirectory("steamapps/common");
+		Directory.CreateDirectory(Utils.GetAbsolutePath("steamapps"));
+		Directory.CreateDirectory(Utils.GetAbsolutePath("steamapps/common"));
 	}
 
 	void CheckIfAlreadyRunning()
