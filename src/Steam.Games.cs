@@ -178,7 +178,7 @@ public partial class Steam
 
 		//reload game list
 		MainWindow? mainWindow = WindowManager.Instance.GetWindows().Find(w => w is MainWindow) as MainWindow;
-		mainWindow?.ReloadGameList = true;
+		mainWindow?.QueueGameUpdate(game);
 	}
 
 

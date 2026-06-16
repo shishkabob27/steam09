@@ -10,6 +10,7 @@
 	<SolidBackgroundControl backgroundColor="104, 106, 101" pinnedLeft="0" pinnedRight="0" pinnedTop="47" height="22" />
 	<SolidBackgroundControl backgroundColor="73, 78, 73" pinnedLeft="0" pinnedRight="0" pinnedTop="69" pinnedBottom="116">
 		<ListViewControl id="LibraryList" pinnedLeft="0" pinnedTop="0" pinnedBottom="0" pinnedRight="0"/>
+		<ListViewControl id="ToolsList" pinnedLeft="0" pinnedTop="0" pinnedBottom="0" pinnedRight="0"/>
 	</SolidBackgroundControl>
 	<SolidBackgroundControl backgroundColor="104, 106, 101" pinnedLeft="0" pinnedRight="0" pinnedBottom="77" height="39" >
 		<ButtonControl id="GameActionButton" pinnedRight="10" pinnedTop="7" width="98" height="24"/>

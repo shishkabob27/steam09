@@ -195,6 +195,11 @@ namespace KGUI
 			child.parent = null;
 		}
 
+		public virtual void OrderChildren(Func<UIControl, int> orderFunc)
+		{
+			_children = _children.OrderBy(orderFunc).ToList();
+		}
+
 		public virtual void Reposition(int x, int y)
 		{
 			this.x = x;
