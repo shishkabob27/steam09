@@ -50,6 +50,9 @@ public class LaunchOptionsWindow : SteamWindow
 				selectedLaunchConfig = radioButtons.IndexOf(radioButton);
 			};
 		}
+
+		int windowHeight = 160 + Math.Max(0, launchConfigs.Count - 2) * 30;
+		SetWindowSize(400, windowHeight);
 	}
 
 	public override void Update(float deltaTime)
