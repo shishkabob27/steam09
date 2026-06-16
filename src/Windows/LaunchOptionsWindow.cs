@@ -3,7 +3,7 @@ using KGUI;
 public class LaunchOptionsWindow : SteamWindow
 {
 	Game game;
-	List<Tuple<string, string, string>> launchConfigs;
+	List<LaunchConfig> launchConfigs;
 	int selectedLaunchConfig = -1;
 
 	ButtonControl launchButton;
@@ -31,18 +31,18 @@ public class LaunchOptionsWindow : SteamWindow
 		this.game = game;
 	}
 
-	public void SetLaunchConfigs(List<Tuple<string, string, string>> launchConfigs)
+	public void SetLaunchConfigs(List<LaunchConfig> launchConfigs)
 	{
 		this.launchConfigs = launchConfigs;
 
-		foreach (Tuple<string, string, string> launchConfig in launchConfigs)
+		foreach (LaunchConfig launchConfig in launchConfigs)
 		{
 			RadioButtonControl radioButton = new RadioButtonControl(panel.RootControl);
 			radioButton.x = 20;
 			radioButton.y = 32 + radioButtons.Count * 30;
 			radioButton.width = 300;
 			radioButton.height = 24;
-			radioButton.text = launchConfig.Item3;
+			radioButton.text = launchConfig.Description;
 			radioButtons.Add(radioButton);
 			panel.RootControl.AddChild(radioButton);
 			radioButton.OnSelected += (selected) =>

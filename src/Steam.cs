@@ -188,15 +188,6 @@ public partial class Steam
 					{
 						window.HandleSDLEvent(e);
 					}
-
-					//DEBUG
-					if ((SDL_EventType)e.type == SDL_EventType.SDL_EVENT_KEY_UP)
-					{
-						if (e.key.key == SDL_Keycode.SDLK_1 && (e.key.mod & SDL_Keymod.SDL_KMOD_LCTRL) != 0)
-						{
-							WindowManager.Instance.CreateWindow(new LoginWindow(this, "test_window"));
-						}
-					}
 				}
 			}
 		}

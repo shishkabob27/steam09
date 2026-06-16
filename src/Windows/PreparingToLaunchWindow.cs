@@ -4,7 +4,7 @@ using KGUI;
 public class PreparingToLaunchWindow : SteamWindow
 {
 	Game game;
-	Tuple<string, string, string> launchConfig;
+	LaunchConfig launchConfig;
 
 	float time = 0;
 	bool done = false;
@@ -18,7 +18,7 @@ public class PreparingToLaunchWindow : SteamWindow
 		this.game = game;
 	}
 
-	public void SetLaunchConfig(Tuple<string, string, string> launchConfig)
+	public void SetLaunchConfig(LaunchConfig launchConfig)
 	{
 		this.launchConfig = launchConfig;
 	}

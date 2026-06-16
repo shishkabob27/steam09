@@ -144,9 +144,6 @@ public partial class Steam
 	public void ContinueLogin()
 	{
 		WindowManager.Instance.CreateWindow(new LoggingInWindow(this, "logging_in_window"));
-
-		//get games
-		GetGames();
 	}
 
 	void OnLoggedOff(SteamUser.LoggedOffCallback callback)

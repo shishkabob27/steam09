@@ -53,13 +53,13 @@ public class GamePropertiesWindow : SteamWindow
 		if (tabIndex == 0) // General
 		{
 			panel.DrawText(Localization.GetString("Steam_Game_Homepage"), 32, 79, Color.FromArgb(218, 222, 214));
-			panel.DrawText(_game.GetHomepage(), 156, 79, Color.FromArgb(255, 255, 255, 255), true, true);
+			panel.DrawText(_game.Homepage, 156, 79, Color.FromArgb(255, 255, 255, 255), true, true);
 
 			panel.DrawText(Localization.GetString("Steam_Game_Developer"), 32, 109, Color.FromArgb(218, 222, 214));
-			panel.DrawText(_game.GetDeveloper(), 156, 109, Color.FromArgb(255, 255, 255, 255), true, true);
+			panel.DrawText(_game.Developer, 156, 109, Color.FromArgb(255, 255, 255, 255), true, true);
 
 			panel.DrawText(Localization.GetString("Steam_Game_Manual"), 32, 137, Color.FromArgb(218, 222, 214));
-			panel.DrawText(_game.GetManual().Item1, 156, 137, Color.FromArgb(255, 255, 255, 255), true, true);
+			panel.DrawText(_game.ManualUrl.Item1, 156, 137, Color.FromArgb(255, 255, 255, 255), true, true);
 		}
 	}
 

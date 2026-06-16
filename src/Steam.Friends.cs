@@ -1,3 +1,4 @@
+using KGUI;
 using Newtonsoft.Json;
 using SteamKit2;
 
@@ -159,8 +160,8 @@ public partial class Steam
 		{
 			friend.GamePlayedName = app.Value.KeyValues["common"]["name"].Value ?? "";
 
-			// FriendsWindow friendsWindow = (FriendsWindow)Windows.Find(x => x is FriendsWindow);
-			// if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
+			FriendsWindow friendsWindow = (FriendsWindow)WindowManager.Instance.GetWindows().Find(x => x is FriendsWindow);
+			if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
 
 			// ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == friend.SteamID);
 			// if (chatWindow != null) chatWindow.UpdateFriendItemControl(friend);

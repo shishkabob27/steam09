@@ -13,24 +13,106 @@ public partial class Steam
 	public ReadOnlyCollection<SteamApps.LicenseListCallback.License> AppLicenses { get; private set; }
 	public Dictionary<uint, ulong> PackageTokens { get; } = [];
 
-	private void LicenseListCallback(SteamApps.LicenseListCallback licenseList)
+	private async void LicenseListCallback(SteamApps.LicenseListCallback licenseList)
 	{
 		if (licenseList.Result != EResult.OK)
 		{
 			Console.WriteLine("Unable to get license list: {0} ", licenseList.Result);
-
+			//TODO: read from cache if available
 			return;
 		}
 
 		Console.WriteLine("Got {0} licenses for account!", licenseList.LicenseList.Count);
 		AppLicenses = licenseList.LicenseList;
 
+		List<SteamApps.PICSRequest> PackageRequests = new List<SteamApps.PICSRequest>();
 		foreach (var license in licenseList.LicenseList)
 		{
-			if (license.AccessToken > 0)
+			PackageRequests.Add(new SteamApps.PICSRequest(license.PackageID, license.AccessToken));
+		}
+
+		var packageInfo = await steamApps.PICSGetProductInfo([], PackageRequests);
+
+		if (!packageInfo.Complete) 
+		{
+			throw new Exception("Package info response incomplete: ");
+			//TODO: handle incomplete response
+		}
+
+		List<uint> appids = new List<uint>();
+
+		foreach (var appResult in packageInfo.Results)
+		{
+			foreach (var app in appResult.Packages)
 			{
-				PackageTokens.TryAdd(license.PackageID, license.AccessToken);
+				if (app.Value != null)
+				{
+					if (app.Value.KeyValues["common"]["appids"] != null)
+					{
+						KeyValue appidsToken = app.Value.KeyValues["appids"];
+						foreach (var appid in appidsToken.Children)
+						{
+							appids.Add(appid.AsUnsignedInteger());
+						}
+					}
+				}
 			}
+		}
+
+		//get access tokens for apps
+		var accessTokens = await steamApps.PICSGetAccessTokens(appids, []);
+		Dictionary<uint, ulong> appTokens = new Dictionary<uint, ulong>();
+		foreach (var token in accessTokens.AppTokens)
+		{
+			appTokens[token.Key] = token.Value;
+		}
+
+		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, appTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
+
+		List<string> allRetrievedAppIds = new List<string>();
+
+		foreach (var appResult in appInfo.Results)
+		{
+			foreach (var app in appResult.Apps)
+			{
+				if (app.Value != null)
+				{
+					allRetrievedAppIds.Add(app.Value.ID.ToString());
+
+					Directory.CreateDirectory($"appcache/librarycache/{app.Value.ID}");
+					app.Value.KeyValues.SaveToFile($"appcache/librarycache/{app.Value.ID}/appinfo.vdf", false);
+
+					//update app if it exist
+					if (Games.Any(g => g.AppID == app.Value.ID))
+					{
+						Games.Find(g => g.AppID == app.Value.ID)?.ParseAppInfo(app.Value.KeyValues);
+						continue;
+					}
+					else
+					{						
+						Game game = new()
+						{ 
+							AppID = (int)app.Value.ID, 
+						};
+						game.ParseAppInfo(app.Value.KeyValues);
+						Games.Add(game);
+					}
+				}
+			}
+		}
+
+		//save to users games.json
+		string gamesJson = JsonConvert.SerializeObject(allRetrievedAppIds, Formatting.None);
+		File.WriteAllText($"userdata/{steamClient?.SteamID?.ConvertToUInt64() ?? 0}/games.json", gamesJson);
+
+		foreach (Game game in Games)
+		{
+			game.Status = game.IsInstalled() ? GameStatus.Installed : GameStatus.NotInstalled;
+		}
+
+		if (mainwindowState == 0) // if main window is not loaded, load it
+		{
+			mainwindowState = 1;
 		}
 	}
 
@@ -70,7 +152,7 @@ public partial class Steam
 
 		game.Status = GameStatus.Downloading;
 
-		string installDir = Path.Combine("steamapps", "common", game.GetInstallDir());
+		string installDir = Path.Combine("steamapps", "common", game.InstallFolderName);
 		ContentDownloader.Config.InstallDirectory = installDir;
 
 		try
@@ -97,28 +179,27 @@ public partial class Steam
 	//Will launch the game if there is only one launch config, otherwise it will show the launch options window
 	public void StartGame(Game game)
 	{
-		List<Tuple<string, string, string>> launchConfigs = game.GetLaunchConfigs();
-		if (launchConfigs.Count == 0)
+		if (game.LaunchConfigs.Count == 0)
 		{
 			Console.WriteLine("No launch config found");
 			return;
 		}
 
 		//if there is only one launch config, launch it directly
-		if (launchConfigs.Count == 1)
+		if (game.LaunchConfigs.Count == 1)
 		{
-			BeginLaunchGame(game, launchConfigs[0]);
+			BeginLaunchGame(game, game.LaunchConfigs[0]);
 			return;
 		}
 
 		LaunchOptionsWindow launchOptionsWindow = new(this, "launchoptionswindow_" + game.AppID);
 		launchOptionsWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 		launchOptionsWindow.SetGame(game);
-		launchOptionsWindow.SetLaunchConfigs(launchConfigs);
+		launchOptionsWindow.SetLaunchConfigs(game.LaunchConfigs);
 		WindowManager.Instance.CreateWindow(launchOptionsWindow);
 	}
 
-	public void BeginLaunchGame(Game game, Tuple<string, string, string> launchConfig)
+	public void BeginLaunchGame(Game game, LaunchConfig launchConfig)
 	{
 		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, "preparingtolaunchwindow_" + game.AppID);
 		preparingToLaunchWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
@@ -128,19 +209,19 @@ public partial class Steam
 	}
 
 	//Will launch the game with the given launch config
-	public async void LaunchGameProcess(Game game, Tuple<string, string, string> launchConfig)
+	public async void LaunchGameProcess(Game game, LaunchConfig launchConfig)
 	{
 		SetupGameEnvironmentVariables(game.AppID);
 
-		Console.WriteLine($"Launching \"{Path.GetFullPath(Environment.CurrentDirectory + "/steamapps/common/" + game.GetInstallDir().ToLower() + "/" + launchConfig.Item1)}\" with arguments: \"{launchConfig.Item2}\"");
+		Console.WriteLine($"Launching \"{Path.GetFullPath(Environment.CurrentDirectory + "/steamapps/common/" + game.InstallFolderName.ToLower() + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
 
 		ProcessStartInfo startInfo = new ProcessStartInfo();
 
 		//Get absolute path of install dir
-		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + game.GetInstallDir().ToLower()));
+		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + game.InstallFolderName.ToLower()));
 		startInfo.WorkingDirectory = installDir;
-		startInfo.FileName = installDir + "/" + launchConfig.Item1;
-		startInfo.Arguments = launchConfig.Item2;
+		startInfo.FileName = installDir + "/" + launchConfig.Executable;
+		startInfo.Arguments = launchConfig.Arguments;
 		startInfo.WindowStyle = ProcessWindowStyle.Normal;
 		startInfo.UseShellExecute = false;
 
@@ -153,113 +234,5 @@ public partial class Steam
 			Console.WriteLine("Failed to start game: " + e.Message);
 			Console.WriteLine(e.StackTrace);
 		}
-	}
-
-	async void GetGames()
-	{
-		//make http request to get games
-		string response;
-		HttpClient client = new HttpClient();
-		client.DefaultRequestHeaders.Add("User-Agent", "steam09");
-
-		try
-		{
-			Console.WriteLine("Retrieving games from steam");
-			response = await client.GetStringAsync($"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?steamid={steamUser.SteamID.ConvertToUInt64()}&include_appinfo=true&key=" + CurrentUser.WebAPIKey);
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("Failed to get games: " + e.Message);
-
-			Console.WriteLine("Falling back to cache");
-			//check if cache exists
-			if (System.IO.File.Exists("appcache/games.json"))
-			{
-				response = System.IO.File.ReadAllText("appcache/games.json");
-			}
-			else
-			{
-				Console.WriteLine("No cache found");
-				response = "{}";
-			}
-		}
-
-		//save cache
-		Console.WriteLine("Saving game list to cache");
-		System.IO.File.WriteAllText("appcache/games.json", response);
-
-		//parse json
-		dynamic games = JsonConvert.DeserializeObject(response);
-		if (games?.response?.games == null)
-		{
-			Console.WriteLine("No games found");
-			mainwindowState = 1; // start main window
-			return;
-		}
-
-		foreach (var game in games.response.games)
-		{
-			Games.Add(new Game
-			{
-				Name = game.name,
-				AppID = game.appid,
-			});
-
-			Directory.CreateDirectory("appcache/librarycache/" + game.appid);
-		}
-
-		//get app info
-		try
-		{
-			List<SteamApps.PICSRequest> appRequests = new List<SteamApps.PICSRequest>();
-			foreach (Game game in Games)
-			{
-				//check if game has app_info.json, if yes then skip it
-				if (System.IO.File.Exists($"appcache/librarycache/{game.AppID}/app_info.json"))
-				{
-					//parse app_info.json
-					string cachedAppInfo = System.IO.File.ReadAllText($"appcache/librarycache/{game.AppID}/app_info.json");
-					game.AppInfo = JObject.Parse(cachedAppInfo);
-				}
-				else
-				{
-					appRequests.Add(new SteamApps.PICSRequest((uint)game.AppID));
-				}
-			}
-
-			if (appRequests.Count > 0)
-			{
-				Console.WriteLine("Getting app info for " + appRequests.Count + " games");
-
-				var appInfo = await steamApps.PICSGetProductInfo(appRequests, []);
-
-				foreach (var appResult in appInfo.Results)
-				{
-					foreach (var app in appResult.Apps)
-					{
-						if (app.Value != null)
-						{
-							//write a readable app info to file
-							string appInfoString = Utils.SerializeAppInfoFileReadable(app.Value);
-							System.IO.File.WriteAllText($"appcache/librarycache/{app.Value.ID}/app_info.json", appInfoString);
-							Games.Find(g => g.AppID == app.Value.ID).AppInfo = JObject.Parse(appInfoString);
-						}
-					}
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("Failed to get app info: " + e.Message);
-			Console.WriteLine(e.StackTrace);
-		}
-
-		//check if games are installed
-		foreach (Game game in Games)
-		{
-			game.Status = game.IsInstalled() ? GameStatus.Installed : GameStatus.NotInstalled;
-		}
-
-		mainwindowState = 1;
 	}
 }

@@ -30,8 +30,7 @@ public class GameItemControl : UIControl, IDisposable
 	public void SetGame(Game game)
 	{
 		this.game = game;
-		string icon = game.AppInfo?["common"]?["icon"]?.ToString() ?? "";
-		gameIconControl.SetImageUrl($"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{game.AppID}/{icon}.jpg");
+		gameIconControl.SetImageUrl(game.IconUrl);
 	}
 	
 	public void Dispose()
@@ -60,7 +59,7 @@ public class GameItemControl : UIControl, IDisposable
 		if (game.Status == GameStatus.NotInstalled) textColor =  Color.FromArgb(121, 126, 121);
 		DrawText(game.Name, 49, 5, textColor);
 		DrawText(game.GetStatusString(), (width / 2) - 24, 5, textColor);
-		DrawText(game.GetDeveloper(), (width - 248), 5, game.Status == GameStatus.NotInstalled ? textColor : Color.FromArgb(255, 255, 255), true, true);
+		DrawText(game.Developer, (width - 248), 5, game.Status == GameStatus.NotInstalled ? textColor : Color.FromArgb(255, 255, 255), true, true);
 
 		unsafe
 		{

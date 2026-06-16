@@ -5,7 +5,7 @@
 		<TabItemControl width="71" text="Community" />
 		<TabItemControl width="66" text="My games" default="true" onClick="OnMyGamesTabSelected"/>
 		<TabItemControl width="66" text="My media"/>
-		<TabItemControl width="66" text="Tools"/>
+		<TabItemControl width="66" text="Tools" onClick="OnToolsTabSelected"/>
 	</TabListControl>
 	<SolidBackgroundControl backgroundColor="104, 106, 101" pinnedLeft="0" pinnedRight="0" pinnedTop="47" height="22" />
 	<SolidBackgroundControl backgroundColor="73, 78, 73" pinnedLeft="0" pinnedRight="0" pinnedTop="69" pinnedBottom="116">

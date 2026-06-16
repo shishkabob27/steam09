@@ -56,7 +56,7 @@ public class InstallGameWindow : SteamWindow
 	public void SetGame(Game game)
 	{
 		this.game = game;
-		gameSize = (game.GetEstimatedSize() / 1024 / 1024).ToString("F0");
+		gameSize = (game.EstimatedSize / 1024 / 1024).ToString("F0");
 	}
 
 	public override void Draw()

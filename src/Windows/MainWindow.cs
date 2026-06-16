@@ -24,6 +24,8 @@ public class MainWindow : SteamWindow
 
 	ListViewControl gameList;
 
+	string gameListFilter = "game";
+
 	public bool ReloadGameList = true; // reload on startup
 	Dictionary<int, bool> catagoryOpenState; // Catagory index, open state
 
@@ -129,7 +131,29 @@ public class MainWindow : SteamWindow
 		gameList.enabled = true;
 		gameList.visible = true;
 
+		if (gameListFilter != "game")
+		{
+			Console.WriteLine("Switching to games view");
+			gameListFilter = "game";
+			ReloadGameList = true;
+		}
+
 		//topBarBackground.height = 22;
+	}
+
+	void OnToolsTabSelected()
+	{
+		inBrowserWindow = false;
+
+		gameList.enabled = true;
+		gameList.visible = true;
+
+		if (gameListFilter != "tool")
+		{
+			Console.WriteLine("Switching to tools view");
+			gameListFilter = "tool";
+			ReloadGameList = true;
+		}
 	}
 
 	void OnFriendsButtonClicked()
@@ -305,23 +329,25 @@ public class MainWindow : SteamWindow
 
 		gameList.Clear(false);
 
+		Func<Game, bool> gameFilter = (game) => game.Type.Equals(gameListFilter, StringComparison.OrdinalIgnoreCase);
+
 		//create favorites category
 		GameCategoryToggleControl favoritesCategory = CreateGameCategory(Localization.GetString("Steam_GamesSection_Favorites"), 0, catagoryOpenState.ContainsKey(0) ? catagoryOpenState[0] : true);
-		foreach (var game in client.Games.Where(g => g.IsFavorite).OrderBy(g => g.Name))
+		foreach (var game in client.Games.Where(g => g.IsFavorite && gameFilter(g)).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game, favoritesCategory);
 		}
 
 		// create categories first
 		GameCategoryToggleControl installedCategory = CreateGameCategory(Localization.GetString("Steam_GamesSection_Installed"), 1, catagoryOpenState.ContainsKey(1) ? catagoryOpenState[1] : true);
-		foreach (var game in client.Games.Where(g => (g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending) && !g.IsFavorite).OrderBy(g => g.Name))
+		foreach (var game in client.Games.Where(g => (g.Status == GameStatus.Installed || g.Status == GameStatus.UpdatePending) && !g.IsFavorite && gameFilter(g)).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game, installedCategory);
 		}
 
 		// create not installed category
 		GameCategoryToggleControl notInstalledCategory = CreateGameCategory(Localization.GetString("Steam_GamesSection_NotInstalled"), 2, catagoryOpenState.ContainsKey(2) ? catagoryOpenState[2] : true);
-		foreach (var game in client.Games.Where(g => g.Status == GameStatus.NotInstalled && !g.IsFavorite).OrderBy(g => g.Name))
+		foreach (var game in client.Games.Where(g => g.Status == GameStatus.NotInstalled && !g.IsFavorite && gameFilter(g)).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game, notInstalledCategory);
 		}

@@ -1,18 +1,106 @@
 using DepotDownloader;
 using Newtonsoft.Json.Linq;
+using SteamKit2;
 
 public class Game
 {
 	public string Name { get; set; }
 	public int AppID { get; set; }
+	public string Type { get; set; }
 	public GameStatus Status { get; set; } = GameStatus.NotInstalled;
 	public float InstallProgress { get; set; } = 0; // set by ContentDownloader
-	public JObject AppInfo { get; set; }
+
+	public string Developer { get; set; } = "Unknown";
+	public string InstallFolderName { get; set; } = string.Empty;
+	public ulong EstimatedSize { get; set; } = 0; // in bytes, calculated from app info depots
+
+	public List<LaunchConfig> LaunchConfigs { get; set; } = new List<LaunchConfig>();
+
+	public string Homepage { get; set; } = string.Empty;
+	public Tuple<string, string> ManualUrl { get; set; } = new Tuple<string, string>(string.Empty, string.Empty); // display name, url
+
+	public string IconUrl { get; set; } = string.Empty;
 
 	public bool IsFavorite { get; set; } = false;
 
 	public Game()
 	{
+	}
+
+	public void ParseAppInfo(KeyValue appInfo)
+	{
+		//name
+		if (appInfo["common"] != null && appInfo["common"]["name"] != null)
+		{
+			Name = appInfo["common"]["name"].Value ?? $"App {AppID}";
+		}
+		else
+		{
+			Name = $"App {AppID}";
+		}
+
+		//developer
+		if (appInfo["extended"] != null && appInfo["extended"]["developer"] != null)
+		{
+			Developer = appInfo["extended"]["developer"].Value ?? "Unknown";
+			if (Developer == "null") Developer = "Unknown";
+			if (string.IsNullOrEmpty(Developer)) Developer = "Unknown";
+		}
+
+		//type
+		if (appInfo["common"] != null && appInfo["common"]["type"] != null)
+		{
+			Type = appInfo["common"]["type"].Value ?? "Unknown";
+			if (Type == "null") Type = "Unknown";
+			if (string.IsNullOrEmpty(Type)) Type = "Unknown";
+		}
+		else
+		{
+			Type = "Unknown";
+		}
+
+		//install folder name
+		if (appInfo["config"] != null && appInfo["config"]["installdir"] != null)
+		{
+			InstallFolderName = appInfo["config"]["installdir"].Value ?? AppID.ToString();
+			if (InstallFolderName == "null") InstallFolderName = AppID.ToString();
+		}
+
+		EstimatedSize = GetEstimatedSize(appInfo);
+
+		LaunchConfigs = GetLaunchConfigs(appInfo);
+
+		//homepage
+		if (appInfo["extended"] != null && appInfo["extended"]["homepage"] != null)
+		{
+			Homepage = appInfo["extended"]["homepage"].Value ?? string.Empty;
+			if (Homepage == "null") Homepage = string.Empty;
+		}
+
+		//manual
+		if (appInfo["extended"] != null && appInfo["extended"]["gamemanualurl"] != null)
+		{
+			string url = appInfo["extended"]["gamemanualurl"].Value ?? string.Empty;
+			if (string.IsNullOrEmpty(url))
+			{
+				ManualUrl = new Tuple<string, string>(Localization.GetString("Steam_Game_NoManual"), null);
+			}
+			else
+			{
+				if (url == "null") url = string.Empty;
+				ManualUrl = new Tuple<string, string>(Localization.GetString("Steam_Game_DefaultManual").Replace("%game%", Name), url);
+			}
+		}
+
+		//icon url
+		if (appInfo["common"] != null && appInfo["common"]["icon"] != null)
+		{
+			string iconHash = appInfo["common"]["icon"].Value ?? string.Empty;
+			if (iconHash != "null" && !string.IsNullOrEmpty(iconHash))
+			{
+				IconUrl = $"https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{AppID}/{iconHash}.jpg";
+			}
+		}
 	}
 
 	public string GetStatusString()
@@ -32,92 +120,59 @@ public class Game
 		return "Unknown";
 	}
 
-	public string GetDeveloper()
-	{
-		if (AppInfo == null)
-		{
-			return "Unknown";
-		}
-
-		JToken developer = AppInfo["extended"]?["developer"];
-
-		if (developer == null || developer.ToString() == "null")
-		{
-			return "Unknown";
-		}
-
-		return developer.ToString();
-	}
-
-	public string GetInstallDir()
-	{
-		if (AppInfo == null)
-		{
-			return AppID.ToString();
-		}
-
-		if (AppInfo["config"] == null)
-		{
-			Console.WriteLine($"{AppID} - AppInfo config is null");
-			return AppID.ToString();
-		}
-
-		return AppInfo["config"]["installdir"].ToString();
-	}
 
 	/// <summary>
 	/// Returns the estimated size of the game in bytes
 	/// </summary>
 	/// <returns>Estimated size in bytes</returns>
-	public long GetEstimatedSize()
+	ulong GetEstimatedSize(KeyValue appInfo)
 	{
-		long TotalDownloadSize = 0; // in bytes
+		ulong TotalDownloadSize = 0; // in bytes
 
-		if (AppInfo == null || AppInfo["depots"] == null)
+		if (appInfo["depots"] == null)
 		{
 			return 0;
 		}
 
-		foreach (JProperty depot in AppInfo["depots"])
+		foreach (KeyValue depot in appInfo["depots"].Children)
 		{
 			try
-			{
-
-				//if sharedinstall is 1, then ignore it
-				if (depot.Value["sharedinstall"] != null && depot.Value["sharedinstall"].ToString() == "1")
+			{				
+				//if sharedinstall is 1, then ignore it, shardinstall 2 still count but we should check if that depot is already installed
+				//eg. goldsrc games
+				if (depot["sharedinstall"] != null && depot["sharedinstall"].AsInteger() == 1)
 				{
 					continue;
 				}
 
 				//TODO: check what dlc user has
-				//check if depot has dlcappid, if yes then ignore it for now
-				if (depot.Value["dlcappid"] != null)
+				if (depot["dlcappid"] != null && depot["dlcappid"].AsInteger() != 0)
 				{
 					continue;
 				}
 
-				if (depot.Value["config"] != null)
+				if (depot["config"] != null)
 				{
-					//check if there is an oslist and if it contains windows, if not then ignore it
-					if (depot.Value["config"]["oslist"] != null && !depot.Value["config"]["oslist"].ToString().Contains("windows"))
+					string oslist = depot["config"]["oslist"]?.AsString() ?? "";
+					if (!string.IsNullOrEmpty(oslist) && !oslist.ToLower().Contains(Util.GetSteamOS())) // if there is no oslist, then we assume it is for all OSs
 					{
 						continue;
 					}
 
-					//check if there is a language in the config, if yes and it is not english, then ignore it
-					if (depot.Value["config"]["language"] != null && depot.Value["config"]["language"].ToString() != "" && depot.Value["config"]["language"].ToString() != "english")
+					string language = depot["config"]["language"]?.AsString() ?? "";
+					if (!string.IsNullOrEmpty(language) && language.ToLower() != "english") // if there is no language, then we assume it is for all languages
 					{
 						continue;
 					}
 				}
 
-
 				//get the size of the depot
-				JToken size = depot.Value["manifests"]["public"]["size"];
-				TotalDownloadSize += long.Parse(size.ToString());
+				ulong size = depot["manifests"]["public"]["size"].AsUnsignedLong();
+				TotalDownloadSize += size;
 			}
 			catch (Exception e)
 			{
+				Console.WriteLine($"Error calculating size for depot {depot.Name}: " + e.Message + "\n" + e.StackTrace);
 			}
 		}
 
@@ -125,47 +180,48 @@ public class Game
 	}
 
 	//returns <executablePath, arguments, description>
-	public List<Tuple<string, string, string>> GetLaunchConfigs()
+	public List<LaunchConfig> GetLaunchConfigs(KeyValue appInfo)
 	{
-		List<Tuple<string, string, string>> launchConfigs = new List<Tuple<string, string, string>>();
+		List<LaunchConfig> launchConfigs = new List<LaunchConfig>();
 
-		if (AppInfo == null)
-		{
-			Console.WriteLine($"GetLaunchConfigs: AppInfo is null for {Name}");
-			return launchConfigs;
-		}
-
-		if (AppInfo["config"] == null)
+		if (appInfo["config"] == null)
 		{
 			Console.WriteLine($"GetLaunchConfigs: AppInfo config is null for {Name}");
 			return launchConfigs;
 		}
 
-		foreach (JObject launch in AppInfo["config"]["launch"])
+		foreach (KeyValue launch in appInfo["config"]["launch"].Children)
 		{
 			try
 			{
 				//if this launch config is the only one, then add it
-				if (AppInfo["config"]?["launch"]?.Count() == 1)
+				if (appInfo["config"]?["launch"]?.Children.Count == 1)
 				{
-					launchConfigs.Add(new Tuple<string, string, string>(launch["executable"].ToString(), launch["arguments"]?.ToString() ?? "", string.Empty));
+					launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", string.Empty));
 					return launchConfigs;
 				}
 
 				//check if os matches
-				if (launch["config"] != null && launch["config"]["oslist"] != null && !launch["config"]["oslist"].ToString().Contains(Util.GetSteamOS())) continue;
+				if (launch["config"] != null)
+				{
+					string oslist = launch["config"]["oslist"]?.AsString() ?? "";
+					string osarch = launch["config"]["osarch"]?.AsString() ?? "";
+					string betakey = launch["config"]["betakey"]?.AsString() ?? "";
+					
+					if (!string.IsNullOrEmpty(oslist) && !oslist.Contains(Util.GetSteamOS())) continue;
 
-				//check if osarch matches
-				if (launch["config"] != null && launch["config"]["osarch"] != null && launch["config"]["osarch"].ToString() != Util.GetSteamArch()) continue;
+					//check if osarch matches
+					if (!string.IsNullOrEmpty(osarch) && osarch.ToLower() != Util.GetSteamArch()) continue;
 
-				//TODO: allow betas
-				//check if the betakey exists, if yes, ignore it
-				if (launch["config"] != null && launch["config"]["betakey"] != null) continue;
+					//TODO: allow betas
+					//check if the betakey exists, if yes, ignore it
+					if (!string.IsNullOrEmpty(betakey)) continue;
+				}
 
 				//check if the executable exists
-				if (launch["executable"] == null) continue;
+				if (launch["executable"] == null || string.IsNullOrEmpty(launch["executable"].AsString())) continue;
 
-				launchConfigs.Add(new Tuple<string, string, string>(launch["executable"].ToString(), launch["arguments"]?.ToString() ?? "", launch["description"]?.ToString() ?? Localization.GetString("Steam_LaunchOption_Game").Replace("%game%", Name)));
+				launchConfigs.Add(new LaunchConfig(launch["executable"].AsString() ?? "", launch["arguments"]?.AsString() ?? "", launch["description"]?.AsString() ?? Localization.GetString("Steam_LaunchOption_Game").Replace("%game%", Name)));
 			}
 			catch (Exception e)
 			{
@@ -180,7 +236,7 @@ public class Game
 	public bool IsInstalled()
 	{
 		//check if the install dir exists
-		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + GetInstallDir().ToLower()));
+		string installDir = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "steamapps/common/" + InstallFolderName.ToLower()));
 		if (!Directory.Exists(installDir)) return false;
 
 		//check if <appid>.installed exists
@@ -189,34 +245,18 @@ public class Game
 
 		return true;
 	}
+}
 
-	public string GetHomepage()
+public class LaunchConfig
+{
+	public string Executable { get; set; }
+	public string Arguments { get; set; }
+	public string Description { get; set; }
+
+	public LaunchConfig(string executable, string arguments, string description)
 	{
-		if (AppInfo == null)
-		{
-			return Localization.GetString("Steam_Game_NoManual");
-		}
-
-		JToken homepage = AppInfo["extended"]?["homepage"];
-
-		return homepage?.ToString() ?? "[ none available ]";
-	}
-
-	//user display name, url
-	public Tuple<string, string> GetManual()
-	{
-		if (AppInfo == null)
-		{
-			return new Tuple<string, string>(Localization.GetString("Steam_Game_NoManual"), "");
-		}
-
-		JToken manualUrl = AppInfo["extended"]?["gamemanualurl"];
-
-		if (manualUrl == null || manualUrl.ToString() == "null")
-		{
-			return new Tuple<string, string>(Localization.GetString("Steam_Game_NoManual"), "");
-		}
-
-		return new Tuple<string, string>(Localization.GetString("Steam_Game_DefaultManual").Replace("%game%", Name), manualUrl.ToString());
+		Executable = executable;
+		Arguments = arguments;
+		Description = description;
 	}
 }
