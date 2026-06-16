@@ -219,12 +219,12 @@ public partial class Steam
 	{
 		SetupGameEnvironmentVariables(game.AppID);
 
-		Console.WriteLine($"Launching \"{Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName.ToLower() + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
+		Console.WriteLine($"Launching \"{Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
 
 		ProcessStartInfo startInfo = new ProcessStartInfo();
 
 		//Get absolute path of install dir
-		string installDir = Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName.ToLower());
+		string installDir = Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName);
 		startInfo.WorkingDirectory = installDir + Path.DirectorySeparatorChar + launchConfig.WorkingDirectory;
 		startInfo.FileName = installDir + "/" + launchConfig.Executable;
 		startInfo.Arguments = launchConfig.Arguments;

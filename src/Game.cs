@@ -236,7 +236,7 @@ public class Game
 	public bool IsInstalled()
 	{
 		//check if the install dir exists
-		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", InstallFolderName.ToLower()));
+		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", InstallFolderName));
 		if (!Directory.Exists(installDir)) return false;
 
 		//check if <appid>.installed exists
