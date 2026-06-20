@@ -68,12 +68,15 @@ namespace KGUI
 		// public unsafe SDL_Texture* closeButtonTexture;
 
 		//DEBUG
-		public double updateFrameTime = 0;
-		public double drawFrameTime = 0;
+		#if DEBUG
+		double updateFrameTime = 0;
+		double drawFrameTime = 0;
+		bool debugFrameTime = false;
+		#endif
 
 		//todo: styles
-		private int TitleBarHeight = 21;
-		private int WindowBorderSize = 1;
+		protected int TitleBarHeight = 21;
+		protected int WindowBorderSize = 1;
 
 		public unsafe BaseWindow(string uuid)
 		{
@@ -90,10 +93,10 @@ namespace KGUI
 				windowFlags |= SDL_WindowFlags.SDL_WINDOW_BORDERLESS | SDL_WindowFlags.SDL_WINDOW_TRANSPARENT;
 			}
 
-			// if (isPopupWindow)
-			// {
-			// 	windowFlags |= WindowFlags.SkipTaskbar;
-			// }
+			if (isPopupWindow)
+			{
+				windowFlags |= SDL_WindowFlags.SDL_WINDOW_ALWAYS_ON_TOP;
+			}
 			window = SDL3.SDL_CreateWindow((Utf8String)title, mWidth, mHeight, windowFlags);
 			if (window == null)
 			{
@@ -148,7 +151,7 @@ namespace KGUI
 			SDL3.SDL_AddEventWatch(eventWatchCallbackDelegate, GCHandle.ToIntPtr(eventWatchGCHandle));
 
 			// Set up window hit test callback
-			if (useCustomWindowDecorations)
+			if (useCustomWindowDecorations && !isPopupWindow)
 			{
 				hitTestCallbackDelegate = &HitTestCallback;
 				hitTestGCHandle = GCHandle.Alloc(this);
@@ -363,11 +366,32 @@ namespace KGUI
 				return;
 			}
 
+			UpdateFade(deltaTime);
+
+			#if DEBUG
+			System.Diagnostics.Stopwatch? watch = null;
+			if (debugFrameTime)
+				watch = System.Diagnostics.Stopwatch.StartNew();
+			#endif
+
+			panel.Update(deltaTime);
+
+			#if DEBUG
+			if (debugFrameTime)
+			{
+				watch?.Stop();
+				updateFrameTime = watch?.Elapsed.TotalMilliseconds ?? 0;
+			}
+			#endif
+		}
+
+		void UpdateFade(float deltaTime)
+		{
 			const float FADE_SPEED = 8.0f;
 			if (isFadingIn)
 			{
 				windowOpacity += deltaTime * FADE_SPEED;
-				if (windowOpacity >= 1.0f)
+				if (windowOpacity >= 1.0f || isPopupWindow)
 				{
 					isFadingIn = false;
 					windowOpacity = 1.0f;
@@ -377,7 +401,7 @@ namespace KGUI
 			else if (isFadingOut)
 			{
 				windowOpacity -= deltaTime * FADE_SPEED;
-				if (windowOpacity <= 0.0f)
+				if (windowOpacity <= 0.0f || isPopupWindow)
 				{
 					isFadingOut = false;
 					windowOpacity = 0.0f;
@@ -388,8 +412,6 @@ namespace KGUI
 			{
 				SDL3.SDL_SetWindowOpacity(window, windowOpacity);
 			}
-
-			panel.Update(deltaTime);
 		}
 
 		public unsafe virtual void PreDraw()
@@ -400,8 +422,6 @@ namespace KGUI
 				return;
 			}
 
-			if (isPopupWindow) return;
-
 			//ensure renderer targets the window
 			SDL3.SDL_SetRenderTarget(renderer, null);
 
@@ -409,46 +429,65 @@ namespace KGUI
 			SDL3.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 			SDL3.SDL_RenderClear(renderer);
 
-			//draw 9-slice background texture
 			if (useCustomWindowDecorations)
 			{
-				// SDL_FRect destRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
-				// SDL3.SDL_RenderTexture9Grid(
-				// 	renderer,
-				// 	windowBackgroundTexture,
-				// 	null,
-				// 	8.0f, 8.0f, 27.0f, 8.0f, 0.0f,
-				// 	&destRect
-				// );
+				DrawWindowDecorations();
+			}
 
-				SDL3.SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);
-				SDL_FRect contentRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
-				SDL3.SDL_RenderFillRect(renderer, &contentRect);
+			#if DEBUG
+			System.Diagnostics.Stopwatch? watch = null;
+			if (debugFrameTime)
+				watch = System.Diagnostics.Stopwatch.StartNew();
+			#endif
 
-				//draw window border
-				SDL3.SDL_SetRenderDrawColor(renderer, 104, 106, 101, 255);
-				SDL_FRect borderRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
-				SDL3.SDL_RenderRect(renderer, &borderRect);
+			panel.Draw();
+			#if DEBUG
+			if (debugFrameTime)
+			{
+				watch?.Stop();
+				drawFrameTime = watch?.Elapsed.TotalMilliseconds ?? 0;
+			}
+			#endif
+		}
 
-				//draw window title bar
+		unsafe void DrawWindowDecorations()
+		{
+			// SDL_FRect destRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
+			// SDL3.SDL_RenderTexture9Grid(
+			// 	renderer,
+			// 	windowBackgroundTexture,
+			// 	null,
+			// 	8.0f, 8.0f, 27.0f, 8.0f, 0.0f,
+			// 	&destRect
+			// );
+
+			SDL3.SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);
+			SDL_FRect contentRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
+			SDL3.SDL_RenderFillRect(renderer, &contentRect);
+
+			//draw window border
+			SDL3.SDL_SetRenderDrawColor(renderer, 104, 106, 101, 255);
+			SDL_FRect borderRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = mHeight };
+			SDL3.SDL_RenderRect(renderer, &borderRect);
+
+			//draw window title bar
+			if (!isPopupWindow)
+			{				
 				SDL3.SDL_SetRenderDrawColor(renderer, 90, 106, 80, 255);
 				SDL_FRect titleBarRect = new SDL_FRect { x = 0, y = 0, w = mWidth, h = 21 };
 				SDL3.SDL_RenderFillRect(renderer, &titleBarRect);
-				//panel.RootControl.DrawBox(0, 0, mWidth, 21, Color.FromArgb(255, 90, 106, 80));
-
-				//title
-				//panel.DrawText(title, 6, 6, Color.FromArgb(255, 216, 222, 211));
-
-				//corners
-				SDL3.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-				SDL3.SDL_RenderPoint(renderer, 0, 0);
-				SDL3.SDL_RenderPoint(renderer, mWidth - 1, 0);
-				SDL3.SDL_RenderPoint(renderer, 0, mHeight - 1);
-				SDL3.SDL_RenderPoint(renderer, mWidth - 1, mHeight - 1);
-
 			}
+			//panel.RootControl.DrawBox(0, 0, mWidth, 21, Color.FromArgb(255, 90, 106, 80));
 
-			panel.Draw();
+			//title
+			//panel.DrawText(title, 6, 6, Color.FromArgb(255, 216, 222, 211));
+
+			//corners
+			SDL3.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+			SDL3.SDL_RenderPoint(renderer, 0, 0);
+			SDL3.SDL_RenderPoint(renderer, mWidth - 1, 0);
+			SDL3.SDL_RenderPoint(renderer, 0, mHeight - 1);
+			SDL3.SDL_RenderPoint(renderer, mWidth - 1, mHeight - 1);
 		}
 
 		public virtual void Draw()
@@ -457,7 +496,7 @@ namespace KGUI
 
 		public unsafe void PostDraw()
 		{
-			if (useCustomWindowDecorations)
+			if (useCustomWindowDecorations && !isPopupWindow)
 			{
 				// //controls
 				// SDL_FRect minimizeRect = new SDL_FRect { x = mWidth - 58, y = 6, w = 16, h = 16 };
@@ -486,7 +525,13 @@ namespace KGUI
 				}
 
 				//title
-				panel.DrawText(title, 6, 6, Color.FromArgb(216, 222, 211));
+				string titleToDraw = title;
+				#if DEBUG
+				if (debugFrameTime)
+					titleToDraw += $" - { updateFrameTime.ToString("F2") } ms , { drawFrameTime.ToString("F2") } ms";
+				#endif
+
+				panel.DrawText(titleToDraw, 6, 6, Color.FromArgb(216, 222, 211));
 			}
 
 			unsafe
@@ -505,21 +550,25 @@ namespace KGUI
 
 		public int GetInternalX()
 		{
+			if (isPopupWindow) return WindowBorderSize;
 			return useCustomWindowDecorations && accountForWindowDecorations ? WindowBorderSize : 0;
 		}
 
 		public int GetInternalY()
 		{
+			if (isPopupWindow) return WindowBorderSize;
 			return useCustomWindowDecorations && accountForWindowDecorations ? TitleBarHeight : 0;
 		}
 
 		public int GetInternalWidth()
 		{
+			if (isPopupWindow) return mWidth - (WindowBorderSize * 2);
 			return useCustomWindowDecorations && accountForWindowDecorations ? mWidth - (WindowBorderSize * 2) : mWidth;
 		}
 
 		public int GetInternalHeight()
 		{
+			if (isPopupWindow) return mHeight - (WindowBorderSize * 2);
 			return useCustomWindowDecorations && accountForWindowDecorations ? mHeight - TitleBarHeight : mHeight;
 		}
 
@@ -691,6 +740,8 @@ namespace KGUI
 						break;
 					case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP:
 						//minimize button
+						if (!useCustomWindowDecorations || isPopupWindow) break;
+
 						SDL_FRect minimizeRect = new SDL_FRect{ x = mWidth - 33, y = 0, w = 15, h = 21};
 						SDL_FRect closeRect = new SDL_FRect{ x = mWidth - 18, y = 0, w = 15, h = 21};
 						if (e.motion.x >= minimizeRect.x && e.motion.y >= minimizeRect.y && e.motion.x <= minimizeRect.x + minimizeRect.w && e.motion.y <= minimizeRect.y + minimizeRect.h)

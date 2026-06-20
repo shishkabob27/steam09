@@ -58,7 +58,7 @@ public class GameCategoryToggleControl : TreeViewItem
 				{
 					gamesBelongingToCategory.Add(gameItemControl);
 				}
-				else if (gameItemControl.game.Status == GameStatus.NotInstalled && !gameItemControl.game.IsFavorite && categoryIndex == 2)
+				else if ((gameItemControl.game.Status == GameStatus.NotInstalled || gameItemControl.game.Status == GameStatus.Queued || gameItemControl.game.Status == GameStatus.Downloading) && !gameItemControl.game.IsFavorite && categoryIndex == 2)
 				{
 					gamesBelongingToCategory.Add(gameItemControl);
 				}

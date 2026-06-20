@@ -33,7 +33,7 @@ namespace DepotDownloader
 
 		private const string DEFAULT_DOWNLOAD_DIR = "depots";
 		private const string CONFIG_DIR = ".DepotDownloader";
-		private static readonly string STAGING_DIR = Path.Combine(CONFIG_DIR, "staging");
+		private static readonly string STAGING_DIR = Path.Combine("../..", "downloading");
 
 		private sealed class DepotDownloadInfo(
 			uint depotid, uint appId, ulong manifestId, string branch,
@@ -409,7 +409,7 @@ namespace DepotDownloader
 			File.Move(fileStagingPath, fileFinalPath);
 		}
 
-		public static async Task DownloadAppAsync(uint appId, List<(uint depotId, ulong manifestId)> depotManifestIds, string branch, string os, string arch, string language, bool lv, bool isUgc, Game game)
+		public static async Task DownloadAppAsync(uint appId, List<(uint depotId, ulong manifestId)> depotManifestIds, string branch, string os, string arch, string language, bool lv, bool isUgc, Game game, CancellationToken cancellationToken = default)
 		{
 			Console.WriteLine("DownloadAppAsync: Starting");
 			cdnPool = new CDNClientPool(steam3, appId);
@@ -567,7 +567,8 @@ namespace DepotDownloader
 
 			try
 			{
-				await DownloadSteam3Async(infos, game).ConfigureAwait(false);
+				await DownloadSteam3Async(infos, game, cancellationToken).ConfigureAwait(false);
+				WriteAppManifest(appId, branch, game, infos);
 			}
 			catch (OperationCanceledException)
 			{
@@ -652,6 +653,7 @@ namespace DepotDownloader
 			public DepotManifest previousManifest;
 			public List<DepotManifest.FileData> filteredFiles;
 			public HashSet<string> allFileNames;
+			public bool skipProgress;
 		}
 
 		private class FileStreamData
@@ -664,8 +666,95 @@ namespace DepotDownloader
 		private class GlobalDownloadCounter
 		{
 			public ulong completeDownloadSize;
+			public ulong sizeDownloaded;
 			public ulong totalBytesCompressed;
 			public ulong totalBytesUncompressed;
+		}
+
+		static void DisposeOpenFileStream(FileStreamData fileStreamData)
+		{
+			if (fileStreamData == null)
+			{
+				return;
+			}
+
+			try
+			{
+				fileStreamData.fileStream?.Dispose();
+				fileStreamData.fileStream = null;
+			}
+			catch (IOException)
+			{
+			}
+
+			try
+			{
+				fileStreamData.fileLock?.Dispose();
+				fileStreamData.fileLock = null;
+			}
+			catch (ObjectDisposedException)
+			{
+			}
+		}
+
+		static void UpdateGameInstallProgress(Game game, GlobalDownloadCounter downloadCounter)
+		{
+			if (game == null)
+			{
+				return;
+			}
+
+			if (downloadCounter.completeDownloadSize == 0)
+			{
+				game.InstallProgress = 100;
+				return;
+			}
+
+			game.InstallProgress = Math.Min(100f, (downloadCounter.sizeDownloaded / (float)downloadCounter.completeDownloadSize) * 100.0f);
+		}
+
+		static void InitializeDownloadProgress(List<DepotFilesData> depotsToDownload, GlobalDownloadCounter downloadCounter, Game game)
+		{
+			downloadCounter.completeDownloadSize = 0;
+			downloadCounter.sizeDownloaded = 0;
+
+			foreach (var depotFileData in depotsToDownload)
+			{
+				ulong depotSize = 0;
+
+				if (!depotFileData.skipProgress)
+				{
+					foreach (var file in depotFileData.filteredFiles)
+					{
+						if (file.Flags.HasFlag(EDepotFileFlag.Directory))
+						{
+							continue;
+						}
+
+						depotSize += file.TotalSize;
+						downloadCounter.completeDownloadSize += file.TotalSize;
+					}
+				}
+
+				depotFileData.depotCounter.completeDownloadSize = depotSize;
+				depotFileData.depotCounter.sizeDownloaded = 0;
+			}
+
+			UpdateGameInstallProgress(game, downloadCounter);
+		}
+
+		static void WriteAppManifest(uint appId, string branch, Game game, List<DepotDownloadInfo> depots)
+		{
+			if (game == null)
+			{
+				return;
+			}
+
+			var installedDepots = depots.ToDictionary(d => d.DepotId, d => d.ManifestId);
+			ulong lastOwner = steam3?.steamUser?.SteamID?.ConvertToUInt64() ?? 0;
+			uint buildId = GetSteam3AppBuildNumber(appId, branch);
+
+			AppManifest.Write(game.AppID, game.Name, game.InstallFolderName, buildId, lastOwner, installedDepots);
 		}
 
 		private class DepotDownloadCounter
@@ -676,56 +765,69 @@ namespace DepotDownloader
 			public ulong depotBytesUncompressed;
 		}
 
-		private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots, Game game)
+		private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots, Game game, CancellationToken cancellationToken)
 		{
 			//Ansi.Progress(Ansi.ProgressState.Indeterminate);
 			await cdnPool.UpdateServerList();
 
-			var cts = new CancellationTokenSource();
+			using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			var downloadCounter = new GlobalDownloadCounter();
 			var depotsToDownload = new List<DepotFilesData>(depots.Count);
 			var allFileNamesAllDepots = new HashSet<string>();
+			var openFileStreams = new ConcurrentBag<FileStreamData>();
 
-			// First, fetch all the manifests for each depot (including previous manifests) and perform the initial setup
-			foreach (var depot in depots)
+			try
 			{
-				var depotFileData = await ProcessDepotManifestAndFiles(cts, depot, downloadCounter);
-
-				if (depotFileData != null)
+				// First, fetch all the manifests for each depot (including previous manifests) and perform the initial setup
+				foreach (var depot in depots)
 				{
-					depotsToDownload.Add(depotFileData);
-					allFileNamesAllDepots.UnionWith(depotFileData.allFileNames);
+					var depotFileData = await ProcessDepotManifestAndFiles(cts, depot, downloadCounter);
+
+					if (depotFileData != null)
+					{
+						depotsToDownload.Add(depotFileData);
+						allFileNamesAllDepots.UnionWith(depotFileData.allFileNames);
+					}
+
+					cts.Token.ThrowIfCancellationRequested();
 				}
 
-				cts.Token.ThrowIfCancellationRequested();
-			}
-
-			// If we're about to write all the files to the same directory, we will need to first de-duplicate any files by path
-			// This is in last-depot-wins order, from Steam or the list of depots supplied by the user
-			if (!string.IsNullOrWhiteSpace(Config.InstallDirectory) && depotsToDownload.Count > 0)
-			{
-				var claimedFileNames = new HashSet<string>();
-
-				for (var i = depotsToDownload.Count - 1; i >= 0; i--)
+				// If we're about to write all the files to the same directory, we will need to first de-duplicate any files by path
+				// This is in last-depot-wins order, from Steam or the list of depots supplied by the user
+				if (!string.IsNullOrWhiteSpace(Config.InstallDirectory) && depotsToDownload.Count > 0)
 				{
-					// For each depot, remove all files from the list that have been claimed by a later depot
-					depotsToDownload[i].filteredFiles.RemoveAll(file => claimedFileNames.Contains(file.FileName));
+					var claimedFileNames = new HashSet<string>();
 
-					claimedFileNames.UnionWith(depotsToDownload[i].allFileNames);
+					for (var i = depotsToDownload.Count - 1; i >= 0; i--)
+					{
+						// For each depot, remove all files from the list that have been claimed by a later depot
+						depotsToDownload[i].filteredFiles.RemoveAll(file => claimedFileNames.Contains(file.FileName));
+
+						claimedFileNames.UnionWith(depotsToDownload[i].allFileNames);
+					}
+				}
+
+				InitializeDownloadProgress(depotsToDownload, downloadCounter, game);
+
+				foreach (var depotFileData in depotsToDownload)
+				{
+					Console.WriteLine("DownloadSteam3Async: Downloading depot {0}", depotFileData.depotDownloadInfo.DepotId);
+					await DownloadSteam3AsyncDepotFiles(cts, downloadCounter, depotFileData, allFileNamesAllDepots, game, openFileStreams);
+					Console.WriteLine("DownloadSteam3Async: Depot {0} downloaded", depotFileData.depotDownloadInfo.DepotId);
+				}
+
+				//Ansi.Progress(Ansi.ProgressState.Hidden);
+
+				Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
+					downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
+			}
+			finally
+			{
+				foreach (var fileStreamData in openFileStreams)
+				{
+					DisposeOpenFileStream(fileStreamData);
 				}
 			}
-
-			foreach (var depotFileData in depotsToDownload)
-			{
-				Console.WriteLine("DownloadSteam3Async: Downloading depot {0}", depotFileData.depotDownloadInfo.DepotId);
-				await DownloadSteam3AsyncDepotFiles(cts, downloadCounter, depotFileData, allFileNamesAllDepots, game);
-				Console.WriteLine("DownloadSteam3Async: Depot {0} downloaded", depotFileData.depotDownloadInfo.DepotId);
-			}
-
-			//Ansi.Progress(Ansi.ProgressState.Hidden);
-
-			Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
-				downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
 		}
 
 		private static async Task<DepotFilesData> ProcessDepotManifestAndFiles(CancellationTokenSource cts, DepotDownloadInfo depot, GlobalDownloadCounter downloadCounter)
@@ -742,16 +844,18 @@ namespace DepotDownloader
 			var lastManifestId = INVALID_MANIFEST_ID;
 			DepotConfigStore.Instance.InstalledManifestIDs.TryGetValue(depot.DepotId, out lastManifestId);
 
-			// In case we have an early exit, this will force equiv of verifyall next run.
-			DepotConfigStore.Instance.InstalledManifestIDs[depot.DepotId] = INVALID_MANIFEST_ID;
-			DepotConfigStore.Save();
-
 			if (lastManifestId != INVALID_MANIFEST_ID)
 			{
 				// We only have to show this warning if the old manifest ID was different
 				var badHashWarning = (lastManifestId != depot.ManifestId);
 				oldManifest = Util.LoadManifestFromFile(configDir, depot.DepotId, lastManifestId, badHashWarning);
 			}
+
+			var skipProgress = lastManifestId == depot.ManifestId && oldManifest != null;
+
+			// In case we have an early exit, this will force equiv of verifyall next run.
+			DepotConfigStore.Instance.InstalledManifestIDs[depot.DepotId] = INVALID_MANIFEST_ID;
+			DepotConfigStore.Save();
 
 			if (lastManifestId == depot.ManifestId && oldManifest != null)
 			{
@@ -891,7 +995,8 @@ namespace DepotDownloader
 				return null;
 			}
 
-			var stagingDir = Path.Combine(depot.InstallDir, STAGING_DIR);
+			var stagingDir = Path.Combine(depot.InstallDir, STAGING_DIR, Config.GameInstallDirectory);
+			Directory.CreateDirectory(stagingDir);
 
 			var filesAfterExclusions = newManifest.Files.AsParallel().Where(f => TestIsFileIncluded(f.FileName)).ToList();
 			var allFileNames = new HashSet<string>(filesAfterExclusions.Count);
@@ -914,9 +1019,6 @@ namespace DepotDownloader
 					// Some manifests don't explicitly include all necessary directories
 					Directory.CreateDirectory(Path.GetDirectoryName(fileFinalPath));
 					Directory.CreateDirectory(Path.GetDirectoryName(fileStagingPath));
-
-					downloadCounter.completeDownloadSize += file.TotalSize;
-					depotCounter.completeDownloadSize += file.TotalSize;
 				}
 			});
 
@@ -928,12 +1030,13 @@ namespace DepotDownloader
 				manifest = newManifest,
 				previousManifest = oldManifest,
 				filteredFiles = filesAfterExclusions,
-				allFileNames = allFileNames
+				allFileNames = allFileNames,
+				skipProgress = skipProgress
 			};
 		}
 
 		private static async Task DownloadSteam3AsyncDepotFiles(CancellationTokenSource cts,
-			GlobalDownloadCounter downloadCounter, DepotFilesData depotFilesData, HashSet<string> allFileNamesAllDepots, Game game)
+			GlobalDownloadCounter downloadCounter, DepotFilesData depotFilesData, HashSet<string> allFileNamesAllDepots, Game game, ConcurrentBag<FileStreamData> openFileStreams)
 		{
 			var depot = depotFilesData.depotDownloadInfo;
 			var depotCounter = depotFilesData.depotCounter;
@@ -951,7 +1054,7 @@ namespace DepotDownloader
 			await Parallel.ForEachAsync(files, parallelOptions, async (file, cancellationToken) =>
 			{
 				await Task.Yield();
-				DownloadSteam3AsyncDepotFile(cts, downloadCounter, depotFilesData, file, networkChunkQueue, game);
+				DownloadSteam3AsyncDepotFile(cts, downloadCounter, depotFilesData, file, networkChunkQueue, game, openFileStreams);
 			});
 
 			await Parallel.ForEachAsync(networkChunkQueue, parallelOptions, async (q, cancellationToken) =>
@@ -1003,7 +1106,8 @@ namespace DepotDownloader
 			DepotFilesData depotFilesData,
 			DepotManifest.FileData file,
 			ConcurrentQueue<(FileStreamData, DepotManifest.FileData, DepotManifest.ChunkData)> networkChunkQueue,
-			Game game)
+			Game game,
+			ConcurrentBag<FileStreamData> openFileStreams)
 		{
 			cts.Token.ThrowIfCancellationRequested();
 
@@ -1156,13 +1260,20 @@ namespace DepotDownloader
 				{
 					lock (depotDownloadCounter)
 					{
-						depotDownloadCounter.sizeDownloaded += file.TotalSize;
-						Console.WriteLine("{0,6:#00.00}% {1}", (depotDownloadCounter.sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
+						if (depotDownloadCounter.completeDownloadSize > 0)
+						{
+							depotDownloadCounter.sizeDownloaded += file.TotalSize;
+							Console.WriteLine("{0,6:#00.00}% {1}", (depotDownloadCounter.sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
+						}
 					}
 
 					lock (downloadCounter)
 					{
-						downloadCounter.completeDownloadSize -= file.TotalSize;
+						if (!depotFilesData.skipProgress)
+						{
+							downloadCounter.sizeDownloaded += file.TotalSize;
+							UpdateGameInstallProgress(game, downloadCounter);
+						}
 					}
 
 					return;
@@ -1171,12 +1282,19 @@ namespace DepotDownloader
 				var sizeOnDisk = (file.TotalSize - (ulong)neededChunks.Select(x => (long)x.UncompressedLength).Sum());
 				lock (depotDownloadCounter)
 				{
-					depotDownloadCounter.sizeDownloaded += sizeOnDisk;
+					if (depotDownloadCounter.completeDownloadSize > 0)
+					{
+						depotDownloadCounter.sizeDownloaded += sizeOnDisk;
+					}
 				}
 
 				lock (downloadCounter)
 				{
-					downloadCounter.completeDownloadSize -= sizeOnDisk;
+					if (!depotFilesData.skipProgress)
+					{
+						downloadCounter.sizeDownloaded += sizeOnDisk;
+						UpdateGameInstallProgress(game, downloadCounter);
+					}
 				}
 			}
 
@@ -1196,6 +1314,7 @@ namespace DepotDownloader
 				fileLock = new SemaphoreSlim(1),
 				chunksToDownload = neededChunks.Count
 			};
+			openFileStreams.Add(fileStreamData);
 
 			foreach (var chunk in neededChunks)
 			{
@@ -1286,7 +1405,7 @@ namespace DepotDownloader
 					}
 					catch (OperationCanceledException)
 					{
-						break;
+						throw;
 					}
 					catch (Exception e)
 					{
@@ -1304,9 +1423,11 @@ namespace DepotDownloader
 				// Throw the cancellation exception if requested so that this task is marked failed
 				cts.Token.ThrowIfCancellationRequested();
 
+				var lockTaken = false;
 				try
 				{
-					await fileStreamData.fileLock.WaitAsync().ConfigureAwait(false);
+					await fileStreamData.fileLock.WaitAsync(cts.Token).ConfigureAwait(false);
+					lockTaken = true;
 
 					if (fileStreamData.fileStream == null)
 					{
@@ -1319,7 +1440,10 @@ namespace DepotDownloader
 				}
 				finally
 				{
-					fileStreamData.fileLock.Release();
+					if (lockTaken)
+					{
+						fileStreamData.fileLock.Release();
+					}
 				}
 			}
 			finally
@@ -1330,38 +1454,40 @@ namespace DepotDownloader
 			var remainingChunks = Interlocked.Decrement(ref fileStreamData.chunksToDownload);
 			if (remainingChunks == 0)
 			{
-				fileStreamData.fileStream?.Dispose();
-				fileStreamData.fileLock.Dispose();
+				DisposeOpenFileStream(fileStreamData);
 			}
 
 			ulong sizeDownloaded = 0;
 			lock (depotDownloadCounter)
 			{
-				sizeDownloaded = depotDownloadCounter.sizeDownloaded + (ulong)written;
-				depotDownloadCounter.sizeDownloaded = sizeDownloaded;
+				if (depotDownloadCounter.completeDownloadSize > 0)
+				{
+					sizeDownloaded = depotDownloadCounter.sizeDownloaded + (ulong)written;
+					depotDownloadCounter.sizeDownloaded = sizeDownloaded;
+				}
+
 				depotDownloadCounter.depotBytesCompressed += chunk.CompressedLength;
 				depotDownloadCounter.depotBytesUncompressed += chunk.UncompressedLength;
 			}
 
 			lock (downloadCounter)
 			{
+				if (!depotFilesData.skipProgress)
+				{
+					downloadCounter.sizeDownloaded += (ulong)written;
+					UpdateGameInstallProgress(game, downloadCounter);
+				}
+
 				downloadCounter.totalBytesCompressed += chunk.CompressedLength;
 				downloadCounter.totalBytesUncompressed += chunk.UncompressedLength;
 
 				//Ansi.Progress(downloadCounter.totalBytesUncompressed, downloadCounter.completeDownloadSize);
 			}
 
-			if (remainingChunks == 0)
+			if (remainingChunks == 0 && depotDownloadCounter.completeDownloadSize > 0)
 			{
 				var fileFinalPath = Path.Combine(depot.InstallDir, file.FileName);
 				Console.WriteLine("{0,6:#00.00}% {1}", (sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
-
-				//update game progress
-				if (game != null)
-				{
-					//TODO: get total size instead of just this depot
-					game.InstallProgress = (sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f;
-				}
 			}
 		}
 

@@ -56,10 +56,13 @@ public class GameItemControl : UIControl, IDisposable
 		gameIconControl.Draw();
 
 		Color textColor = Color.FromArgb(230, 236, 224);
-		if (game.Status == GameStatus.NotInstalled) textColor =  Color.FromArgb(121, 126, 121);
+		if (game.Status == GameStatus.NotInstalled && !game.HasPartialDownload) textColor = Color.FromArgb(121, 126, 121);
+
+		Color downloadStatusColor = textColor;
+		if (game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading || game.DownloadStatus != DownloadStatus.None || game.HasPartialDownload) downloadStatusColor = Color.FromArgb(196, 181, 80);
 		DrawText(game.Name, 49, 5, textColor);
-		DrawText(game.GetStatusString(), (width / 2) - 24, 5, textColor);
-		DrawText(game.Developer, (width - 248), 5, game.Status == GameStatus.NotInstalled ? textColor : Color.FromArgb(255, 255, 255), true, true);
+		DrawText(game.GetStatusString(), (width / 2) - 24, 5, downloadStatusColor);
+		DrawText(game.Developer, (width - 248), 5, (game.Status == GameStatus.NotInstalled && !game.HasPartialDownload) ? textColor : Color.FromArgb(255, 255, 255), true, true);
 
 		unsafe
 		{

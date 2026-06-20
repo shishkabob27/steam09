@@ -208,6 +208,8 @@ public partial class Steam
 		// Process any queued window creation requests from background threads
 		SteamGuardAuthenticator.ProcessWindowCreationQueue();
 
+		WatchGameProcesses(deltaTime);
+
 		if (loginWindowState == 1)
 		{
 			WindowManager.Instance.CreateWindow(new LoginWindow(this, "login_window"));

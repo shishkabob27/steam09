@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PopupMenuWindow resizable="false">
+<SolidBackgroundControl pinnedTop="0" pinnedBottom="0" pinnedLeft="0" pinnedRight="0" backgroundColor="46, 49, 44"/>
+<ListViewControl id="list" pinnedTop="0" pinnedBottom="0" pinnedLeft="0" pinnedRight="0" gap="0" verticalPadding="0"/>
+</PopupMenuWindow>

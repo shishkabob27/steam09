@@ -21,7 +21,7 @@ namespace DepotDownloader
 
 		public ReadOnlyCollection<SteamApps.LicenseListCallback.License> Licenses => Steam.Instance.AppLicenses;
 
-		public Dictionary<uint, ulong> AppTokens { get; } = [];
+		public Dictionary<uint, ulong> AppTokens => Steam.Instance.AppTokens;
 		public Dictionary<uint, ulong> PackageTokens => Steam.Instance.PackageTokens;
 		public Dictionary<uint, byte[]> DepotKeys { get; } = [];
 		public ConcurrentDictionary<(uint, string), TaskCompletionSource<SteamContent.CDNAuthToken>> CDNAuthTokens { get; } = [];

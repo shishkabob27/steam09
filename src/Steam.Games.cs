@@ -10,8 +10,15 @@ public partial class Steam
 {
 	public List<Game> Games = new List<Game>();
 
+	List<Tuple<Process, Game>> runningGameProcesses = new List<Tuple<Process, Game>>();
+	float timeSinceLastProcessCheck = 0;
+	const float processCheckInterval = 1.5f;
+
+	public DownloadManager DownloadManager = new DownloadManager();
+
 	public ReadOnlyCollection<SteamApps.LicenseListCallback.License> AppLicenses { get; private set; }
-	public Dictionary<uint, ulong> PackageTokens { get; } = [];
+	public Dictionary<uint, ulong> PackageTokens { get;  set; } = [];
+	public Dictionary<uint, ulong> AppTokens { get;  set; } = new Dictionary<uint, ulong>();
 
 	private async void LicenseListCallback(SteamApps.LicenseListCallback licenseList)
 	{
@@ -28,6 +35,10 @@ public partial class Steam
 		List<SteamApps.PICSRequest> PackageRequests = new List<SteamApps.PICSRequest>();
 		foreach (var license in licenseList.LicenseList)
 		{
+			if (!PackageTokens.ContainsKey(license.PackageID))
+			{
+				PackageTokens.Add(license.PackageID, license.AccessToken);
+			}
 			PackageRequests.Add(new SteamApps.PICSRequest(license.PackageID, license.AccessToken));
 		}
 
@@ -63,15 +74,14 @@ public partial class Steam
 
 		//get access tokens for apps
 		var accessTokens = await steamApps.PICSGetAccessTokens(appids, []);
-		Dictionary<uint, ulong> appTokens = new Dictionary<uint, ulong>();
 		foreach (var token in accessTokens.AppTokens)
 		{
-			appTokens[token.Key] = token.Value;
+			AppTokens[token.Key] = token.Value;
 		}
 
 		Console.WriteLine("Got access tokens for apps! Waiting for app info...");
 
-		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, appTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
+		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, AppTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
 
 		List<string> allRetrievedAppIds = new List<string>();
 
@@ -112,6 +122,7 @@ public partial class Steam
 		foreach (Game game in Games)
 		{
 			game.Status = game.IsInstalled() ? GameStatus.Installed : GameStatus.NotInstalled;
+			game.RefreshPartialDownloadState();
 		}
 
 		Console.WriteLine("App info retrieved for all apps! Waiting for main window.");
@@ -121,66 +132,6 @@ public partial class Steam
 			mainwindowState = 1;
 		}
 	}
-
-	public async Task DownloadGame(int appID)
-	{
-		Console.WriteLine("Downloading game: " + appID);
-		//check if any game is downloading
-		//TODO: curently downloading multiple games can cause files to download in other games install directory
-		if (Games.Any(g => g.Status == GameStatus.Downloading))
-		{
-			Console.WriteLine("Another game is already downloading");
-			return;
-		}
-
-		Game game = Games.Find(g => g.AppID == appID);
-		if (game == null)
-		{
-			Console.WriteLine("Game not found");
-			return;
-		}
-
-		if (game.Status == GameStatus.Installed)
-		{
-			Console.WriteLine("Game is already installed");
-			return;
-		}
-		else if (game.Status == GameStatus.UpdatePending)
-		{
-			Console.WriteLine("Game is already updating");
-			return;
-		}
-		else if (game.Status == GameStatus.Downloading)
-		{
-			Console.WriteLine("Game is already downloading");
-			return;
-		}
-
-		game.Status = GameStatus.Downloading;
-
-		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", game.InstallFolderName));
-		ContentDownloader.Config.InstallDirectory = installDir;
-
-		try
-		{
-			await ContentDownloader.DownloadAppAsync((uint)appID, new List<(uint, ulong)> { }, "public", Util.GetSteamOS(), Util.GetSteamArch(), "english", false, false, game);
-			game.Status = GameStatus.Installed;
-
-			//create dummy file to indicate game is installed
-			File.Create(Utils.GetAbsolutePath(Path.Combine("steamapps", $"{appID}.installed"))).Close();
-		}
-		catch (Exception e)
-		{
-			game.Status = GameStatus.NotInstalled;
-			Console.WriteLine("Failed to download game: " + e.Message);
-			Console.WriteLine(e.StackTrace);
-		}
-
-		//reload game list
-		MainWindow? mainWindow = WindowManager.Instance.GetWindows().Find(w => w is MainWindow) as MainWindow;
-		mainWindow?.QueueGameUpdate(game);
-	}
-
 
 	//Will launch the game if there is only one launch config, otherwise it will show the launch options window
 	public void StartGame(Game game)
@@ -233,12 +184,34 @@ public partial class Steam
 
 		try
 		{
-			Process.Start(startInfo);
+			Process? process = Process.Start(startInfo);
+			if (process != null)
+			{
+				runningGameProcesses.Add(new Tuple<Process, Game>(process, game));
+				game.IsRunning = true;
+			}
 		}
 		catch (Exception e)
 		{
 			Console.WriteLine("Failed to start game: " + e.Message);
 			Console.WriteLine(e.StackTrace);
+		}
+	}
+
+	void WatchGameProcesses(float deltaTime)
+	{
+		timeSinceLastProcessCheck += deltaTime;
+		if (timeSinceLastProcessCheck < processCheckInterval) return;
+
+		timeSinceLastProcessCheck = 0;
+
+		for (int i = runningGameProcesses.Count - 1; i >= 0; i--)
+		{
+			if (runningGameProcesses[i].Item1.HasExited)
+			{
+				runningGameProcesses[i].Item2.IsRunning = false;
+				runningGameProcesses.RemoveAt(i);
+			}
 		}
 	}
 }

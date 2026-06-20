@@ -243,6 +243,8 @@ public class MainWindow : SteamWindow
 					GameStatus.Installed => Localization.GetString("Steam_Launch"),
 					GameStatus.UpdatePending => Localization.GetString("Steam_UpdateColumn"),
 					GameStatus.NotInstalled => Localization.GetString("Steam_Install"),
+					GameStatus.Queued => "Queued",
+					GameStatus.Downloading => "Downloading",
 					_ => Localization.GetString("Steam_Launch"),
 				};
 			}
@@ -379,7 +381,7 @@ public class MainWindow : SteamWindow
 
 		// create not installed category
 		GameCategoryToggleControl notInstalledCategory = CreateGameCategory(Localization.GetString("Steam_GamesSection_NotInstalled"), 2, list);
-		foreach (var game in client.Games.Where(g => g.Status == GameStatus.NotInstalled && !g.IsFavorite && gameFilter(g)).OrderBy(g => g.Name))
+		foreach (var game in client.Games.Where(g => (g.Status == GameStatus.NotInstalled || g.Status == GameStatus.Queued || g.Status == GameStatus.Downloading) && !g.IsFavorite && gameFilter(g)).OrderBy(g => g.Name))
 		{
 			CreateGameItemControl(game, notInstalledCategory);
 		}
@@ -429,31 +431,41 @@ public class MainWindow : SteamWindow
 				selectedToolID = game.AppID;
 		};
 		gameItemControl.OnDoubleClick = (gameItemControl) => OnGameAction(game.AppID);
-		// gameItemControl.OnRightClick = () =>
-		// {
-		// 	if (inBrowserWindow) return;
+		gameItemControl.OnRightClick = (control) =>
+		{
+			if (inBrowserWindow) return;
 
-		// 	//check if mouse cursor is withen bounds of the list
-		// 	if (panel.MouseY < gameList.y || panel.MouseY > gameList.y + gameList.height) return;
+			//check if mouse cursor is withen bounds of the list
+			//if (panel.MouseY < gameList.y || panel.MouseY > gameList.y + gameList.height) return;
 
-		// 	gameItemControl.OnClick();
+			gameItemControl.OnClick(control);
+			panel.SetFocus(gameItemControl);
 
-		// 	PopupMenuWindow popupMenuWindow = new PopupMenuWindow(steam, $"Game Actions - {game.Name}", 120, 0);
-		// 	popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? Localization.GetString("SteamUI_GamesDialog_RightClick_LaunchGames") : Localization.GetString("SteamUI_GamesDialog_RightClick_InstallGame"), () =>
-		// 	{
-		// 		OnGameAction(game.AppID);
-		// 	});
-		// 	popupMenuWindow.AddSeparator();
-		// 	popupMenuWindow.AddItem(Localization.GetString("Steam_Properties"), () =>
-		// 	{
-		// 		Game game = steam.Games.Find(x => x.AppID == gameItemControl.game.AppID);
-		// 		if (game == null) return;
+			PopupMenuWindow popupMenuWindow = new PopupMenuWindow(Steam.Instance, $"GameAction_{game.AppID}");
+			popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? Localization.GetString("SteamUI_GamesDialog_RightClick_LaunchGames") : Localization.GetString("SteamUI_GamesDialog_RightClick_InstallGame"), (c) =>
+			{
+				OnGameAction(game.AppID);
+			});
+			popupMenuWindow.AddSeparator();
+			popupMenuWindow.AddItem(game.IsFavorite ? Localization.GetString("Steam_GamesDialog_RightClick_RemoveFromFavorites") : Localization.GetString("Steam_GamesDialog_RightClick_AddToFavorites"), (c) =>
+			{
+				game.IsFavorite = !game.IsFavorite;
+				SaveFavorites();
+				UpdateGameItem(game);
+			});
+			popupMenuWindow.AddItem(Localization.GetString("Steam_RightClick_DeleteLocalContent"), null);
+			popupMenuWindow.AddSeparator();
+			popupMenuWindow.AddItem(Localization.GetString("Steam_Properties"), (c) =>
+			{
+				Game? game = Steam.Instance.Games.Find(x => x.AppID == gameItemControl.game.AppID);
+				if (game == null) return;
 
-		// 		GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(steam, "", 516, 400, game);
-		// 		steam.PendingWindows.Add(gamePropertiesWindow);
-		// 	});
-		// 	steam.PendingWindows.Add(popupMenuWindow);
-		// };
+				GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(Steam.Instance, "properties_" + game.AppID);
+				gamePropertiesWindow.SetGame(game);
+				WindowManager.Instance.CreateWindow(gamePropertiesWindow);
+			});
+			WindowManager.Instance.CreateWindow(popupMenuWindow);
+		};
 	}
 
 	public void QueueGameUpdate(Game game)
@@ -496,7 +508,7 @@ public class MainWindow : SteamWindow
 			currentCategoryIndex = 0;
 		else if (game.Status == GameStatus.Installed || game.Status == GameStatus.UpdatePending)
 			currentCategoryIndex = 1;
-		else if (game.Status == GameStatus.NotInstalled)
+		else if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading)
 			currentCategoryIndex = 2;
 
 		GameCategoryToggleControl? newCategory = null;
@@ -548,7 +560,7 @@ public class MainWindow : SteamWindow
 		Game? game = client.Games.Find(x => x.AppID == gameID);
 		if (game == null) return;
 
-		if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.UpdatePending)
+		if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.UpdatePending || game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading)
 		{
 			if (WindowManager.Instance.IsWindowOpen<InstallGameWindow>($"install_wizard_{game.AppID}"))
 			{

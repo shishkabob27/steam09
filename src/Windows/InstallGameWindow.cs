@@ -40,7 +40,7 @@ public class InstallGameWindow : SteamWindow
 			}
 			else if (screen == 1)
 			{
-				client.DownloadGame(game.AppID);
+				client.DownloadManager.DownloadGame(game.AppID);
 				WindowManager.Instance.CloseWindow(this);
 			}
 		};

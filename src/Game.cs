@@ -8,7 +8,10 @@ public class Game
 	public int AppID { get; set; }
 	public string Type { get; set; }
 	public GameStatus Status { get; set; } = GameStatus.NotInstalled;
+	public DownloadStatus DownloadStatus { get; set; } = DownloadStatus.None;
 	public float InstallProgress { get; set; } = 0; // set by ContentDownloader
+	public bool HasPartialDownload { get; set; } = false;
+	public bool IsRunning { get; set; } = false;
 
 	public string Developer { get; set; } = "Unknown";
 	public string InstallFolderName { get; set; } = string.Empty;
@@ -105,10 +108,16 @@ public class Game
 
 	public string GetStatusString()
 	{
+		if (IsRunning)
+		{
+			return "Running";
+		}
 		switch (Status)
 		{
 			case GameStatus.NotInstalled:
-				return Localization.GetString("Steam_NotInstalled");
+				return HasPartialDownload ? "Paused" : Localization.GetString("Steam_NotInstalled");
+			case GameStatus.Queued:
+				return "Queued";
 			case GameStatus.Downloading:
 				return "Downloading: " + InstallProgress.ToString("F0") + "%";
 			case GameStatus.Installed:
@@ -232,18 +241,20 @@ public class Game
 		return launchConfigs;
 	}
 
+	public bool HasPartialDownloadFiles()
+	{
+		return AppManifest.HasPartialInstall(AppID, InstallFolderName);
+	}
+
+	public void RefreshPartialDownloadState()
+	{
+		HasPartialDownload = !IsInstalled() && HasPartialDownloadFiles();
+	}
+
 	//This should only be called on init
 	public bool IsInstalled()
 	{
-		//check if the install dir exists
-		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", InstallFolderName));
-		if (!Directory.Exists(installDir)) return false;
-
-		//check if <appid>.installed exists
-		string installedFile = Utils.GetAbsolutePath(Path.Combine("steamapps", $"{AppID}.installed"));
-		if (!File.Exists(installedFile)) return false;
-
-		return true;
+		return AppManifest.IsAppInstalled(AppID, InstallFolderName);
 	}
 }
 

@@ -353,6 +353,17 @@ namespace KGUI
 				}
 			}
 
+			if (rightMouseDown)
+			{
+				if (!prevRightMouseDown) // we just right-clicked this frame
+				{
+					if (topmostControl != null)
+					{
+						topmostControl.OnRightClick?.Invoke(topmostControl);
+					}
+				}
+			}
+
 			if (!leftMouseDown && prevLeftMouseDown)
 			{
 				if (lastClickedControl != null)
