@@ -9,13 +9,15 @@ public class MainWindow : SteamWindow
 
 	bool inBrowserWindow = false;
 	bool browserInitialized = false;
-	Browser browser;
+	BrowserControl browserControl;
 	//Texture browserControlTexture;
 	// BrowserButtonControl BackButton;
 	// BrowserButtonControl ForwardButton;
 	// BrowserButtonControl ReloadButton;
 	// BrowserButtonControl StopButton;
 	// BrowserButtonControl HomeButton;
+
+	SolidBackgroundControl topBar;
 
 	ButtonControl GameActionButton; // Install, Launch
 	ButtonControl PropertiesButton; // game properties
@@ -49,7 +51,11 @@ public class MainWindow : SteamWindow
 	// 		SDL.FreeSurface(browserControlSurface);
 	// 	}
 
-	// 	//browser controls
+		//browser controls
+
+		topBar = panel.GetControlByID<SolidBackgroundControl>("topBar");
+		browserControl = panel.GetControlByID<BrowserControl>("browserControl");
+
 	// 	{
 	// 		BackButton = new BrowserButtonControl(panel, renderer, "backbutton", 13, 82, 16, 16, 0);
 	// 		ForwardButton = new BrowserButtonControl(panel, renderer, "forwardbutton", 43, 82, 16, 16, 1);
@@ -89,16 +95,19 @@ public class MainWindow : SteamWindow
 
 	 	CreateControls();
 	 	LoadFavorites();
+
+		OnMyGamesTabSelected();
 	}
 
 	void OnStoreTabSelected()
 	{
 		inBrowserWindow = true;
+		browserControl.visible = true;
+		browserControl.enabled = true;
 
 		if (!browserInitialized)
 		{
-			InitializeBrowser();
-			browser.LoadURL("https://store.steampowered.com/");
+			browserControl.LoadURL("https://store.steampowered.com/");
 		}
 
 		//enable browser controls
@@ -112,7 +121,7 @@ public class MainWindow : SteamWindow
 		// StopButton.enabled = true;
 		// HomeButton.enabled = true;
 
-		// topBarBackground.height = 43;
+		topBar.height = 43;
 
 		gameList.enabled = false;
 		gameList.visible = false;
@@ -124,6 +133,8 @@ public class MainWindow : SteamWindow
 	void OnMyGamesTabSelected()
 	{
 		inBrowserWindow = false;
+		browserControl.visible = false;
+		browserControl.enabled = false;
 
 		//disable browser controls
 		// BackButton.visible = false;
@@ -137,6 +148,7 @@ public class MainWindow : SteamWindow
 		// ReloadButton.enabled = false;
 		// StopButton.enabled = false;
 		// HomeButton.enabled = false;
+		topBar.height = 22;
 
 		gameList.enabled = true;
 		gameList.visible = true;
@@ -154,13 +166,15 @@ public class MainWindow : SteamWindow
 		{
 			panel.SetFocus(gameItemControl);
 		}
-
-		//topBarBackground.height = 22;
 	}
 
 	void OnToolsTabSelected()
 	{
 		inBrowserWindow = false;
+		browserControl.visible = false;
+		browserControl.enabled = false;
+
+		topBar.height = 22;
 
 		gameList.enabled = false;
 		gameList.visible = false;
@@ -253,11 +267,6 @@ public class MainWindow : SteamWindow
 
 		if (inBrowserWindow)
 		{
-			browser.Resize(mWidth - 2, mHeight - 111 - 79);
-
-			browser.OnMouseMove(panel.MouseX - 1, panel.MouseY - 111);
-			browser.Update();
-
 			// BackButton.enabled = browser.CanGoBack();
 			// ForwardButton.enabled = browser.CanGoForward();
 		}
@@ -267,15 +276,9 @@ public class MainWindow : SteamWindow
 	{
 		base.Draw();
 
-		if (inBrowserWindow)
-		{
-			BrowserDraw();
-		}
-		else
-		{
+		if (!inBrowserWindow)
 			GameListDraw();
-		}
-
+		
 		unsafe
 		{
 			panel.RootControl.DrawTexture(ResizeTexture, mWidth - 23, mHeight - GetInternalY() - 23);
@@ -287,64 +290,6 @@ public class MainWindow : SteamWindow
 		panel.DrawText(Localization.GetString("Steam_GamesColumn"), 53, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
 		panel.DrawText(Localization.GetString("Steam_StatusColumn"), (mWidth / 2) - 24, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
 		panel.DrawText(Localization.GetString("Steam_DeveloperColumn"), mWidth - 250, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
-	}
-
-	public void BrowserDraw()
-	{
-		SDL_FRect browserRect = new() { x = 1, y = 111, w = mWidth - 2, h = mHeight - GetInternalY() - 111 - 79 };
-		unsafe
-		{
-			browser.Draw(renderer, browserRect);
-		}
-	}
-
-	public void InitializeBrowser()
-	{
-		browser = new Browser();
-		browser.Initialize();
-		browserInitialized = true;
-	}
-
-	public override void OnMouseScroll(int scrollX, int scrollY)
-	{
-		if (!inBrowserWindow) return;
-
-		if (panel.MouseY > 111 && panel.MouseY < mHeight - 79)
-		{
-			browser.OnMouseScroll(scrollX, scrollY);
-		}
-	}
-
-	public override void OnMouseDown(int x, int y, int button)
-	{
-		if (inBrowserWindow && panel.MouseY > 111 && panel.MouseY < mHeight - 79)
-		{
-			browser.OnMouseDown(button);
-		}
-	}
-
-	public override void OnMouseUp(int x, int y, int button)
-	{
-		if (inBrowserWindow && panel.MouseY > 111 && panel.MouseY < mHeight - 79)
-		{
-			browser.OnMouseUp(button);
-		}
-	}
-
-	public override void OnKeyDown(SDL_Keycode key, SDL_Keymod mod)
-	{
-		if (inBrowserWindow)
-		{
-			browser.OnKeyDown(key, mod);
-		}
-	}
-
-	public override void OnKeyUp(SDL_Keycode key, SDL_Keymod mod)
-	{
-		if (inBrowserWindow)
-		{
-			browser.OnKeyUp(key, mod);
-		}
 	}
 
 	GameCategoryToggleControl CreateGameCategory(string categoryName, int index, ListViewControl list)

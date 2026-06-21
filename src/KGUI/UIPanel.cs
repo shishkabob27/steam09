@@ -320,15 +320,16 @@ namespace KGUI
 				if (lastClickedControl != null)
 				{
 					//release previous click
-					lastClickedControl.mouseDown = false;
-
 					if (lastClickedControl != topmostControl)
 					{
+						lastClickedControl.mouseDown = false;
 						lastClickedControl.OnUnfocused?.Invoke(lastClickedControl);
 						lastClickedControl.focused = false;
 					}
 				}
+
 				if (lastClickedControl != topmostControl) lastClickedControl = topmostControl; // set as the new clicked control
+				if (lastClickedControl != null && !lastClickedControl.mouseDown) lastClickedControl.OnMouseDown?.Invoke(1);
 				if (lastClickedControl != null) lastClickedControl.mouseDown = true; // click the new control
 				
 				if (!prevLeftMouseDown) // we just clicked this frame
@@ -360,6 +361,7 @@ namespace KGUI
 					if (topmostControl != null)
 					{
 						topmostControl.OnRightClick?.Invoke(topmostControl);
+						topmostControl.OnMouseDown?.Invoke(2);
 					}
 				}
 			}
@@ -369,11 +371,20 @@ namespace KGUI
 				if (lastClickedControl != null)
 				{
 					lastClickedControl.mouseDown = false;
+					lastClickedControl.OnMouseUp?.Invoke(1);
+				}
+			}
+
+			if (!rightMouseDown && prevRightMouseDown)
+			{
+				if (topmostControl != null)
+				{
+					topmostControl.OnMouseUp?.Invoke(2);
 				}
 			}
 
 
-				foreach (var child in RootControl.Children)
+			foreach (var child in RootControl.Children)
 			{
 				//if (!child.enabled) continue;
 				child.Update();

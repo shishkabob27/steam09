@@ -31,7 +31,7 @@ public class Browser
 		BrowserRenderer = ULPlatform.CreateRenderer(cfg);
 
 		// Create View
-		BrowserView = BrowserRenderer.CreateView(1920, 1080);
+		BrowserView = BrowserRenderer.CreateView(640, 480);
 
 		BrowserView.OnFinishLoading += (_, _, _) =>
 		{
@@ -44,7 +44,7 @@ public class Browser
 			{				
 				if (cursor == ULCursor.Pointer)
 				{
-					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_POINTER));
+					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_DEFAULT));
 				}
 				else if (cursor == ULCursor.IBeam)
 				{
@@ -52,7 +52,7 @@ public class Browser
 				}
 				else if (cursor == ULCursor.Hand)
 				{
-					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_DEFAULT));
+					SDL3.SDL_SetCursor(SDL3.SDL_CreateSystemCursor(SDL_SystemCursor.SDL_SYSTEM_CURSOR_POINTER));
 				}
 			}
 		};
@@ -176,8 +176,8 @@ public class Browser
 	{
 		ULScrollEvent scrollEvent = new ULScrollEvent();
 		scrollEvent.Type = ULScrollEventType.ByPixel;
-		scrollEvent.DeltaX = scrollX * 50;
-		scrollEvent.DeltaY = scrollY * 50;
+		scrollEvent.DeltaX = scrollX * 100;
+		scrollEvent.DeltaY = scrollY * 100;
 		BrowserView.FireScrollEvent(scrollEvent);
 	}
 
@@ -228,18 +228,34 @@ public class Browser
 	{
 		BrowserRenderer.Render();
 
-		byte* basePtr = BrowserView.Surface.Value.Bitmap.LockPixels();
-		int pitch = (int)BrowserView.Surface.Value.Bitmap.RowBytes;
+		if (!BrowserView.Surface.HasValue)
+			return;
 
-		SDL_Surface* surface = SDL3.SDL_CreateSurfaceFrom((int)BrowserView.Width, (int)BrowserView.Height, SDL3.SDL_PIXELFORMAT_RGBA32, pitch, *basePtr);
+		var bitmap = BrowserView.Surface.Value.Bitmap;
+		int width = (int)bitmap.Width;
+		int height = (int)bitmap.Height;
+		byte* pixels = bitmap.LockPixels();
+		int rowBytes = (int)bitmap.RowBytes;
 
-		SDL_Texture* texture = SDL3.SDL_CreateTextureFromSurface(renderer, surface);
+		if (pixels == null || width <= 0 || height <= 0)
+		{
+			if (pixels != null) bitmap.UnlockPixels();
+			return;
+		}
 
-		SDL3.SDL_RenderTexture(renderer, texture, null, &destRect);
+		SDL_Surface* surface = SDL3.SDL_CreateSurfaceFrom(width, height, SDL3.SDL_PIXELFORMAT_BGRA32, (nint)pixels, rowBytes);
 
-		SDL3.SDL_DestroySurface(surface);
-		SDL3.SDL_DestroyTexture(texture);
+		if (surface != null)
+		{
+			SDL_Texture* texture = SDL3.SDL_CreateTextureFromSurface(renderer, surface);
+			if (texture != null)
+			{
+				SDL3.SDL_RenderTexture(renderer, texture, null, &destRect);
+				SDL3.SDL_DestroyTexture(texture);
+			}
+			SDL3.SDL_DestroySurface(surface);
+		}
 
-		BrowserView.Surface.Value.Bitmap.UnlockPixels();
+		bitmap.UnlockPixels();
 	}
 }

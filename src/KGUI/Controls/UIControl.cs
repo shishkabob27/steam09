@@ -312,6 +312,8 @@ namespace KGUI
 		}
 
 		public Action<UIControl> OnClick;
+		public Action<int> OnMouseDown;
+		public Action<int> OnMouseUp;
 		public Action<UIControl> OnDoubleClick;
 		public Action<UIControl> OnRightClick;
 		public Action<UIControl, int> OnScroll;

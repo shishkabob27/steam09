@@ -5,7 +5,7 @@ namespace KGUI
 {
 	public class RootControl : UIControl
 	{
-		private UIPanel panel;
+		public UIPanel panel;
 		
 		public unsafe RootControl(UIControl parent) : base(parent)
 		{
