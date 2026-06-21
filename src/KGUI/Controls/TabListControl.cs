@@ -1,4 +1,4 @@
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class TabListControl : UIControl
 	{

@@ -1,7 +1,7 @@
 using System.Drawing;
 using KGUI;
 
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class DividerControl : UIControl
 	{

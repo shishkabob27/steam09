@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Xml.Serialization;
 
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class TabItemControl : UIControl
 	{

@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Collections.Concurrent;
 using SDL;
 
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class RemoteImageControl : UIControl
     {

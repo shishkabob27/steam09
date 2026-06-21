@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class SolidBackgroundControl : UIControl
 	{

@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Xml.Serialization;
 using SDL;
 
-namespace KGUI
+namespace KGUI.Controls
 {
 	public class LabelControl : UIControl
 	{
