@@ -61,6 +61,7 @@ namespace KGUI
 		public bool isFadingIn = true;
 		public bool isFadingOut = false;
 		public float windowOpacity = 0.0f;
+		int updateCount = 0;
 
 		// public unsafe SDL_Texture* windowBackgroundTexture; //9-slice texture
 		// public unsafe SDL_Texture* minimizeButtonTexture;
@@ -135,12 +136,11 @@ namespace KGUI
 			unsafe
 			{
 				SDL3.SDL_SetWindowPosition(window, (int)SDL3.SDL_WINDOWPOS_CENTERED, (int)SDL3.SDL_WINDOWPOS_CENTERED);
-			}
 		
-			//ensure renderer targets the window
-			unsafe
-			{
+				//ensure renderer targets the window
 				SDL3.SDL_SetRenderTarget(renderer, null);
+				
+				SDL3.SDL_SetWindowOpacity(window, 0.0f);
 			}
 			
 			mShown = true;
@@ -388,6 +388,7 @@ namespace KGUI
 		void UpdateFade(float deltaTime)
 		{
 			const float FADE_SPEED = 8.0f;
+			if (updateCount < 3) { updateCount++; return; }
 			if (isFadingIn)
 			{
 				windowOpacity += deltaTime * FADE_SPEED;
