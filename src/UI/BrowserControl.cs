@@ -43,6 +43,7 @@ namespace KGUI
 		public override void Update()
 		{
 			base.Update();
+			if (!enabled || !visible) return;
 
 			_browser.Resize(width, height);
 
@@ -54,6 +55,8 @@ namespace KGUI
 
 		public override void Draw()
 		{
+			if (!enabled) return;
+
 			if (_rootControl == null)
 			{
 				UIControl currentParent = parent;
