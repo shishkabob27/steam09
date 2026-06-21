@@ -1,5 +1,6 @@
 using System.Drawing;
 using KGUI;
+using KGUI.Controls;
 
 public class GamePropertiesWindow : SteamWindow
 {

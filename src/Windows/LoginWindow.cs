@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using KGUI;
+using KGUI.Controls;
 using SteamKit2;
 using SteamKit2.Authentication;
 

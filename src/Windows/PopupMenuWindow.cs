@@ -1,4 +1,5 @@
 using KGUI;
+using KGUI.Controls;
 using SDL;
 
 public class PopupMenuWindow : SteamWindow

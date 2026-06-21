@@ -1,4 +1,5 @@
 using KGUI;
+using KGUI.Controls;
 using SteamKit2;
 
 public class FriendsWindow : SteamWindow

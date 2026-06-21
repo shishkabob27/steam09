@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
 using SDL;
+using KGUI.Controls;
 
 namespace KGUI
 {

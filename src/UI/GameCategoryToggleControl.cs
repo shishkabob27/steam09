@@ -1,5 +1,6 @@
 using System.Drawing;
 using KGUI;
+using KGUI.Controls;
 using SDL;
 
 public class GameCategoryToggleControl : TreeViewItem

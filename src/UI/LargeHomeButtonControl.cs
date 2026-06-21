@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Xml.Serialization;
 using KGUI;
+using KGUI.Controls;
 using SDL;
 
 public class LargeHomeButtonControl : ButtonControl

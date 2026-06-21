@@ -1,4 +1,5 @@
 using KGUI;
+using KGUI.Controls;
 
 public class LaunchOptionsWindow : SteamWindow
 {
