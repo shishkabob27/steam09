@@ -6,6 +6,7 @@ public class DownloadManager
 	readonly Queue<int> _downloadQueue = new Queue<int>();
 	CancellationTokenSource? _downloadCts;
 	int? _currentDownloadAppId;
+	int? _pauseRequestedAppId;
 	bool _processingQueue;
 
 	public async Task DownloadGame(int appID)
@@ -105,22 +106,32 @@ public class DownloadManager
 				}
 				catch (OperationCanceledException)
 				{
-					if (game.InstallProgress > 0)
+					if (_pauseRequestedAppId == appID)
 					{
-						ulong bytesDownloaded = (ulong)(game.EstimatedSize * game.InstallProgress / 100f);
-						AppManifest.UpdateDownloadProgress(appID, bytesDownloaded, game.EstimatedSize);
-						game.HasPartialDownload = true;
+						_pauseRequestedAppId = null;
+						SetGamePaused(game, appID);
+						Console.WriteLine("Download paused for game: " + appID);
 					}
 					else
 					{
-						AppManifest.Delete(appID);
-						game.HasPartialDownload = false;
+						if (game.InstallProgress > 0)
+						{
+							ulong bytesDownloaded = (ulong)(game.EstimatedSize * game.InstallProgress / 100f);
+							AppManifest.UpdateDownloadProgress(appID, bytesDownloaded, game.EstimatedSize);
+							game.HasPartialDownload = true;
+						}
+						else
+						{
+							AppManifest.Delete(appID);
+							game.HasPartialDownload = false;
+						}
+
+						game.Status = GameStatus.Queued;
+						_downloadQueue.Enqueue(appID);
+						Console.WriteLine("Download cancelled for game: " + appID);
 					}
 
-					game.Status = GameStatus.Queued;
 					game.DownloadStatus = DownloadStatus.None;
-					_downloadQueue.Enqueue(appID);
-					Console.WriteLine("Download cancelled for game: " + appID);
 				}
 				catch (Exception e)
 				{
@@ -159,6 +170,74 @@ public class DownloadManager
 				await ProcessDownloadQueue();
 			}
 		}
+	}
+
+	public void PauseDownload(int appID)
+	{
+		Game? game = Steam.Instance.Games.Find(g => g.AppID == appID);
+		if (game == null)
+		{
+			Console.WriteLine("Game not found");
+			return;
+		}
+
+		if (_currentDownloadAppId == appID && _downloadCts != null)
+		{
+			Console.WriteLine("Pausing active download for game: " + appID);
+			_pauseRequestedAppId = appID;
+			_downloadCts.Cancel();
+			return;
+		}
+
+		if (RemoveFromQueue(appID))
+		{
+			Console.WriteLine("Removed queued download for game: " + appID);
+			game.Status = GameStatus.NotInstalled;
+			game.DownloadStatus = DownloadStatus.None;
+			game.RefreshPartialDownloadState();
+			NotifyGameUpdate(game);
+			return;
+		}
+
+		Console.WriteLine("Game is not downloading or queued: " + appID);
+	}
+
+	static void SetGamePaused(Game game, int appID)
+	{
+		ulong bytesDownloaded = game.InstallProgress > 0
+			? (ulong)(game.EstimatedSize * game.InstallProgress / 100f)
+			: 0;
+
+		if (AppManifest.Exists(appID))
+		{
+			AppManifest.UpdateDownloadProgress(appID, bytesDownloaded, game.EstimatedSize);
+		}
+		else if (bytesDownloaded > 0)
+		{
+			ulong lastOwner = Steam.Instance.steamClient?.SteamID?.ConvertToUInt64() ?? 0;
+			AppManifest.WriteDownloading(appID, game.Name, game.InstallFolderName, game.EstimatedSize, bytesDownloaded, lastOwner);
+		}
+
+		game.Status = GameStatus.NotInstalled;
+		game.DownloadStatus = DownloadStatus.None;
+		game.RefreshPartialDownloadState();
+	}
+
+	bool RemoveFromQueue(int appID)
+	{
+		if (!_downloadQueue.Contains(appID))
+		{
+			return false;
+		}
+
+		var remaining = _downloadQueue.Where(id => id != appID).ToList();
+		_downloadQueue.Clear();
+		foreach (int id in remaining)
+		{
+			_downloadQueue.Enqueue(id);
+		}
+
+		return true;
 	}
 
 	static void NotifyGameUpdate(Game game)

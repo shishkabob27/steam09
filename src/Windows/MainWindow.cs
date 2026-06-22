@@ -253,15 +253,26 @@ public class MainWindow : SteamWindow
 			{
 				GameActionButton.enabled = true;
 				PropertiesButton.enabled = true;
-				GameActionButton.text = CurrentlySelectedGame.Status switch
+				
+				if (CurrentlySelectedGame.Status == GameStatus.Installed)
 				{
-					GameStatus.Installed => Localization.GetString("Steam_Launch"),
-					GameStatus.UpdatePending => Localization.GetString("Steam_UpdateColumn"),
-					GameStatus.NotInstalled => Localization.GetString("Steam_Install"),
-					GameStatus.Queued => "Queued",
-					GameStatus.Downloading => "Downloading",
-					_ => Localization.GetString("Steam_Launch"),
-				};
+					GameActionButton.text = Localization.GetString("Steam_Launch");
+				}
+				else if (CurrentlySelectedGame.Status == GameStatus.NotInstalled)
+				{
+					if (CurrentlySelectedGame.HasPartialDownload)
+					{
+						GameActionButton.text = "Resume";
+					}
+					else
+					{
+						GameActionButton.text = Localization.GetString("Steam_Install");
+					}
+				}
+				else if (CurrentlySelectedGame.Status == GameStatus.Queued || CurrentlySelectedGame.Status == GameStatus.Downloading || CurrentlySelectedGame.DownloadStatus != DownloadStatus.None)
+				{
+					GameActionButton.text = "Pause";
+				}
 			}
 		}
 
@@ -506,18 +517,29 @@ public class MainWindow : SteamWindow
 		Game? game = client.Games.Find(x => x.AppID == gameID);
 		if (game == null) return;
 
-		if (game.Status == GameStatus.NotInstalled || game.Status == GameStatus.UpdatePending || game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading)
+		if (game.Status == GameStatus.NotInstalled)
 		{
-			if (WindowManager.Instance.IsWindowOpen<InstallGameWindow>($"install_wizard_{game.AppID}"))
+			if (game.HasPartialDownload)
 			{
-				WindowManager.Instance.HighlightWindow<InstallGameWindow>($"install_wizard_{game.AppID}");
-				return;
+				client.DownloadManager.DownloadGame(game.AppID);
 			}
+			else
+			{
+				if (WindowManager.Instance.IsWindowOpen<InstallGameWindow>($"install_wizard_{game.AppID}"))
+				{
+					WindowManager.Instance.HighlightWindow<InstallGameWindow>($"install_wizard_{game.AppID}");
+					return;
+				}
 
-			InstallGameWindow installGameWindow = new InstallGameWindow(client, $"install_wizard_{game.AppID}");
-			installGameWindow.SetTitle(Localization.GetString("Steam_InstallAppWizard_Title").Replace("%game%", game.Name));
-			installGameWindow.SetGame(game);
-			WindowManager.Instance.CreateWindow(installGameWindow);
+				InstallGameWindow installGameWindow = new InstallGameWindow(client, $"install_wizard_{game.AppID}");
+				installGameWindow.SetTitle(Localization.GetString("Steam_InstallAppWizard_Title").Replace("%game%", game.Name));
+				installGameWindow.SetGame(game);
+				WindowManager.Instance.CreateWindow(installGameWindow);
+			}
+		}
+		else if (game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading || game.DownloadStatus != DownloadStatus.None)
+		{
+			client.DownloadManager.PauseDownload(game.AppID);
 		}
 		else if (game.Status == GameStatus.Installed)
 		{
