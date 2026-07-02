@@ -100,6 +100,8 @@ namespace KGUI
 
 		void InitControlFromLayout(XmlNode node, UIControl parentControl)
 		{
+			if (node.Name == "#comment") return;
+			
 			Type? type;
 			if (!_typeCache.TryGetValue(node.Name, out type))
 			{
