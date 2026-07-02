@@ -10,7 +10,7 @@ public class MainWindow : SteamWindow
 
 	bool inBrowserWindow = false;
 	bool browserInitialized = false;
-	BrowserControl browserControl;
+	//BrowserControl browserControl;
 	//Texture browserControlTexture;
 	// BrowserButtonControl BackButton;
 	// BrowserButtonControl ForwardButton;
@@ -55,7 +55,7 @@ public class MainWindow : SteamWindow
 		//browser controls
 
 		topBar = panel.GetControlByID<SolidBackgroundControl>("topBar");
-		browserControl = panel.GetControlByID<BrowserControl>("browserControl");
+		// browserControl = panel.GetControlByID<BrowserControl>("browserControl");
 
 	// 	{
 	// 		BackButton = new BrowserButtonControl(panel, renderer, "backbutton", 13, 82, 16, 16, 0);
@@ -103,13 +103,13 @@ public class MainWindow : SteamWindow
 	void OnStoreTabSelected()
 	{
 		inBrowserWindow = true;
-		browserControl.visible = true;
-		browserControl.enabled = true;
+		// browserControl.visible = true;
+		// browserControl.enabled = true;
 
-		if (!browserInitialized)
-		{
-			browserControl.LoadURL("https://store.steampowered.com/");
-		}
+		// if (!browserInitialized)
+		// {
+		// 	browserControl.LoadURL("https://store.steampowered.com/");
+		// }
 
 		//enable browser controls
 		// BackButton.visible = true;
@@ -134,8 +134,8 @@ public class MainWindow : SteamWindow
 	void OnMyGamesTabSelected()
 	{
 		inBrowserWindow = false;
-		browserControl.visible = false;
-		browserControl.enabled = false;
+		// browserControl.visible = false;
+		// browserControl.enabled = false;
 
 		//disable browser controls
 		// BackButton.visible = false;
@@ -172,8 +172,8 @@ public class MainWindow : SteamWindow
 	void OnToolsTabSelected()
 	{
 		inBrowserWindow = false;
-		browserControl.visible = false;
-		browserControl.enabled = false;
+		// browserControl.visible = false;
+		// browserControl.enabled = false;
 
 		topBar.height = 22;
 

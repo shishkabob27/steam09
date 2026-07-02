@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <MainWindow title="#Steam_Root_Title" width="1000" height="660" resizable="true" minimumWidth="640" minimumHeight="480">
 	<TabListControl x="0" y="25" height="22">
-		<TabItemControl width="66" text="Store" onClick="OnStoreTabSelected"/>
-		<TabItemControl width="71" text="Community" />
+		<!-- <TabItemControl width="66" text="Store" onClick="OnStoreTabSelected"/> -->
+		<!-- <TabItemControl width="71" text="Community" /> -->
 		<TabItemControl width="66" text="My games" default="true" onClick="OnMyGamesTabSelected"/>
 		<TabItemControl width="66" text="My media"/>
 		<TabItemControl width="66" text="Tools" onClick="OnToolsTabSelected"/>
@@ -21,5 +21,5 @@
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="265" width="100" height="52" homeIndex="2"/>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="384" width="100" height="52" homeIndex="3"/>
 	<LargeHomeButtonControl pinnedBottom="16" pinnedLeft="504" width="100" height="52" homeIndex="4"/>
-	<BrowserControl id="browserControl" pinnedLeft="0" pinnedRight="0" pinnedTop="90" pinnedBottom="78" zIndex="1000"/>
+	<!-- <BrowserControl id="browserControl" pinnedLeft="0" pinnedRight="0" pinnedTop="90" pinnedBottom="78" zIndex="1000"/> -->
 </MainWindow>
