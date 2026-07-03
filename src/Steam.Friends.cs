@@ -48,7 +48,6 @@ public partial class Steam
 
 	void OnFriendPersonaState(SteamFriends.PersonaStateCallback callback)
 	{
-		Console.WriteLine("Friend " + callback.FriendID + " updated persona state");
 		if (callback.FriendID == CurrentUser.SteamID)
 		{
 			CurrentUser.AvatarSHA = callback.AvatarHash;
