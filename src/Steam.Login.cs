@@ -60,7 +60,7 @@ public partial class Steam
 			{
 				u.PersonaName = user.PersonaName;
 				u.RefreshToken = user.RefreshToken;
-				u.WebAPIKey = user.WebAPIKey;
+				u.AvatarSHA = user.AvatarSHA;
 				found = true;
 				break;
 			}
@@ -122,30 +122,9 @@ public partial class Steam
 		CurrentUser.SteamID = steamUser.SteamID.ConvertToUInt64();
 		ModifyLoginUser(CurrentUser);
 
-		if (!CheckWebApiKey())
-		{
-			WindowManager.Instance.CreateWindow(new RequestWebAPIKeyWindow(this, $"webapikeywindow"));
-			return;
-		}
-
-		ContinueLogin();
-	}
-
-	bool CheckWebApiKey()
-	{
-		if (CurrentUser.WebAPIKey == null || CurrentUser.WebAPIKey == "")
-		{
-			Console.WriteLine("No web api key found, asking user to enter it");
-			return false;
-		}
-		return true;
-	}
-
-	public void ContinueLogin()
-	{
 		WindowManager.Instance.CreateWindow(new LoggingInWindow(this, "logging_in_window"));
 	}
-
+	
 	void OnLoggedOff(SteamUser.LoggedOffCallback callback)
 	{
 		Console.WriteLine("Logged off from Steam!");

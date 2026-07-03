@@ -97,7 +97,7 @@ public class LoginWindow : SteamWindow
 					LoginID = 0x73743039,
 				});
 
-				Steam.Instance.CurrentUser = new User(0, pollResponse.AccountName, "", "", pollResponse.RefreshToken);
+				Steam.Instance.CurrentUser = new User(0, pollResponse.AccountName, "", pollResponse.RefreshToken, null);
 
 				WindowManager.Instance.CloseWindow(this);
 			}

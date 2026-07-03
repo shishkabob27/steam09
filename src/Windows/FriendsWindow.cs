@@ -18,7 +18,7 @@ public class FriendsWindow : SteamWindow
 		//self
 		FriendItemControl selfFriendItemControl = new FriendItemControl(FriendListControl);
 		selfFriendItemControl.SetSize(200, 48);
-		selfFriendItemControl.SetFriend(steam.CurrentUser.SteamID, steam.CurrentUser.PersonaName, EPersonaState.Online, 0, "", DateTime.Now);
+		selfFriendItemControl.SetSelf(steam.CurrentUser);
 		selfFriendItemControl.Self = true;
 		selfFriendItemControl.DrawBackground = false;
 		SelfFriendItemControl = selfFriendItemControl;
@@ -50,7 +50,7 @@ public class FriendsWindow : SteamWindow
 		{
 			FriendItemControl friendItemControl = new FriendItemControl(FriendListControl);
 			friendItemControl.SetSize(200, 48);
-			friendItemControl.SetFriend(friend.SteamID, friend.PersonaName, friend.PersonaState, (int)friend.GamePlayed, friend.GamePlayedName, friend.LastOnline);
+			friendItemControl.SetFriend(friend);
 
 			FriendListControl.AddChild(friendItemControl);
 			FriendItemControls.Add(friendItemControl);
@@ -64,14 +64,10 @@ public class FriendsWindow : SteamWindow
 
 	public void UpdateFriend(Friend friend)
 	{
-		FriendItemControl friendItemControl = FriendItemControls.Find(f => f.SteamID == friend.SteamID);
+		FriendItemControl friendItemControl = FriendItemControls.Find(f => f.Friend.SteamID == friend.SteamID);
 		if (friendItemControl != null)
 		{
-			friendItemControl.PersonaName = friend.PersonaName;
-			friendItemControl.PersonaState = friend.PersonaState;
-			friendItemControl.GamePlayedID = (int)friend.GamePlayed;
-			friendItemControl.GamePlayedName = friend.GamePlayedName;
-			friendItemControl.LastOnline = friend.LastOnline;
+			friendItemControl.SetFriend(friend);
 		}
 	}
 }

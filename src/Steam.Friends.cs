@@ -7,76 +7,6 @@ public partial class Steam
 	public List<Friend> Friends = new List<Friend>();
 	public List<ChatHistory> ChatHistories = new List<ChatHistory>();
 
-	async void GetAvatars(List<ulong> steamIDs)
-	{
-		try
-		{
-			Directory.CreateDirectory(Utils.GetAbsolutePath("webcache/avatars"));
-			//see if an avatar already exists for each steamid
-			List<ulong> steamIDsToRemove = new List<ulong>();
-			foreach (ulong steamID in steamIDs)
-			{
-				if (File.Exists(Utils.GetAbsolutePath($"webcache/avatars/{steamID}_32.jpg"))) steamIDsToRemove.Add(steamID);
-			}
-
-			//remove the steamids that already have an avatar
-			steamIDs.RemoveAll(steamID => steamIDsToRemove.Contains(steamID));
-
-			if (steamIDs.Count == 0) return;
-
-			string response;
-			HttpClient client = new HttpClient();
-			client.DefaultRequestHeaders.Add("User-Agent", "steam09");
-
-			response = await client.GetStringAsync($"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={CurrentUser.WebAPIKey}&steamids={string.Join(",", steamIDs)}");
-
-			//parse json
-			dynamic avatars = JsonConvert.DeserializeObject(response);
-
-			foreach (dynamic avatar in avatars.response.players)
-			{
-				string[] avatarURLs = new string[] { avatar.avatarfull, avatar.avatarmedium, avatar.avatar };
-				foreach (string avatarURL in avatarURLs)
-				{
-					string size = "32";
-					if (avatarURL.ToString() == avatar.avatarfull.ToString()) size = "184";
-					if (avatarURL.ToString() == avatar.avatarmedium.ToString()) size = "64";
-
-					//check if avatar is a valid url
-					if (avatarURL == null || avatarURL == "") continue;
-
-					string avatarUrl = avatarURL.ToString();
-					if (!Uri.IsWellFormedUriString(avatarUrl, UriKind.Absolute)) continue;
-
-					//send request to get avatar
-					HttpClient avatarClient = new HttpClient();
-					avatarClient.DefaultRequestHeaders.Add("User-Agent", "steam09");
-					HttpResponseMessage ImageResponse = await avatarClient.GetAsync(avatarUrl);
-					if (ImageResponse.IsSuccessStatusCode)
-					{
-						byte[] data = await ImageResponse.Content.ReadAsByteArrayAsync();
-						//save to file
-						File.WriteAllBytes(Utils.GetAbsolutePath($"webcache/avatars/{avatar.steamid}_{size}.jpg"), data);
-					}
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("Failed to get avatars: " + e.Message);
-			return;
-		}
-	}
-
-	public string GetAvatarPath(ulong steamID, AvatarSize size)
-	{
-		if (File.Exists(Utils.GetAbsolutePath($"webcache/avatars/{steamID}_{(int)size}.jpg"))) return Utils.GetAbsolutePath($"webcache/avatars/{steamID}_{(int)size}.jpg");
-
-		//if not, return default avatar
-		if (size == AvatarSize.Small) return "resources/graphics/avatar_32blank.png";
-		else return "resources/graphics/avatar_64blank.png";
-	}
-
 	public string GetPersonaName(ulong steamID)
 	{
 		//check if self, if so, return persona name
@@ -97,15 +27,11 @@ public partial class Steam
 				PersonaName = "",
 				PersonaState = EPersonaState.Offline,
 				Relationship = friend.Relationship,
+				AvatarSHA = steamFriends.GetFriendAvatar(friend.SteamID),
 			});
 
 			steamFriends.RequestFriendInfo(friend.SteamID);
 		}
-
-		//Get avatars for all friends and self
-		List<ulong> steamIDs = Friends.Select(f => f.SteamID).ToList();
-		steamIDs.Add(CurrentUser.SteamID);
-		GetAvatars(steamIDs);
 
 		//get chat histories for all friends
 		foreach (var friend in Friends)
@@ -122,6 +48,15 @@ public partial class Steam
 
 	void OnFriendPersonaState(SteamFriends.PersonaStateCallback callback)
 	{
+		Console.WriteLine("Friend " + callback.FriendID + " updated persona state");
+		if (callback.FriendID == CurrentUser.SteamID)
+		{
+			CurrentUser.AvatarSHA = callback.AvatarHash;
+			ModifyLoginUser(CurrentUser);
+
+			return;
+		}
+		
 		Friend friend = Friends.Find(f => f.SteamID == callback.FriendID.ConvertToUInt64());
 		if (friend != null)
 		{
