@@ -3,13 +3,13 @@ using KGUI;
 
 public class DownloadManager
 {
-	readonly Queue<int> _downloadQueue = new Queue<int>();
+	readonly Queue<uint> _downloadQueue = new Queue<uint>();
 	CancellationTokenSource? _downloadCts;
-	int? _currentDownloadAppId;
-	int? _pauseRequestedAppId;
+	uint? _currentDownloadAppId;
+	uint? _pauseRequestedAppId;
 	bool _processingQueue;
 
-	public async Task DownloadGame(int appID)
+	public async Task DownloadGame(uint appID)
 	{
 		Console.WriteLine("Downloading game: " + appID);
 
@@ -64,7 +64,7 @@ public class DownloadManager
 		{
 			while (_downloadQueue.Count > 0)
 			{
-				int appID = _downloadQueue.Dequeue();
+				uint appID = _downloadQueue.Dequeue();
 
 				Game? game = Steam.Instance.Games.Find(g => g.AppID == appID);
 				if (game == null)
@@ -98,7 +98,7 @@ public class DownloadManager
 
 				try
 				{
-					await ContentDownloader.DownloadAppAsync((uint)appID, new List<(uint, ulong)> { }, "public", Util.GetSteamOS(), Util.GetSteamArch(), "english", false, false, game, _downloadCts.Token);
+					await ContentDownloader.DownloadAppAsync(appID, new List<(uint, ulong)> { }, "public", Util.GetSteamOS(), Util.GetSteamArch(), "english", false, false, game, _downloadCts.Token);
 					game.Status = GameStatus.Installed;
 					game.InstallProgress = 100;
 					game.DownloadStatus = DownloadStatus.None;
@@ -172,7 +172,7 @@ public class DownloadManager
 		}
 	}
 
-	public void PauseDownload(int appID)
+	public void PauseDownload(uint appID)
 	{
 		Game? game = Steam.Instance.Games.Find(g => g.AppID == appID);
 		if (game == null)
@@ -202,7 +202,7 @@ public class DownloadManager
 		Console.WriteLine("Game is not downloading or queued: " + appID);
 	}
 
-	static void SetGamePaused(Game game, int appID)
+	static void SetGamePaused(Game game, uint appID)
 	{
 		ulong bytesDownloaded = game.InstallProgress > 0
 			? (ulong)(game.EstimatedSize * game.InstallProgress / 100f)
@@ -223,7 +223,7 @@ public class DownloadManager
 		game.RefreshPartialDownloadState();
 	}
 
-	bool RemoveFromQueue(int appID)
+	bool RemoveFromQueue(uint appID)
 	{
 		if (!_downloadQueue.Contains(appID))
 		{
@@ -232,7 +232,7 @@ public class DownloadManager
 
 		var remaining = _downloadQueue.Where(id => id != appID).ToList();
 		_downloadQueue.Clear();
-		foreach (int id in remaining)
+		foreach (uint id in remaining)
 		{
 			_downloadQueue.Enqueue(id);
 		}

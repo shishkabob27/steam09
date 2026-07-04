@@ -5,7 +5,7 @@ using SteamKit2;
 public class Game
 {
 	public string Name { get; set; }
-	public int AppID { get; set; }
+	public uint AppID { get; set; }
 	public string Type { get; set; }
 	public GameStatus Status { get; set; } = GameStatus.NotInstalled;
 	public DownloadStatus DownloadStatus { get; set; } = DownloadStatus.None;

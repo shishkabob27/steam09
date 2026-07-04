@@ -14,20 +14,21 @@ public class PreparingToLaunchWindow : SteamWindow
 	{
 	}
 
-	public void SetGame(Game game)
+	public void SetGame(Game game, LaunchConfig launchConfig)
 	{
 		this.game = game;
-	}
-
-	public void SetLaunchConfig(LaunchConfig launchConfig)
-	{
 		this.launchConfig = launchConfig;
+
+		Steam.Instance.OnSelectedLaunchConfigChanged(game, launchConfig);
 	}
 
 	public override void Update(float deltaTime)
 	{
 		base.Update(deltaTime);
 
+		if (game.LaunchAppTaskStatus != LaunchAppTaskStatus.DelayLaunch)
+			return;
+			
 		time += deltaTime;
 
 		if (time > 1 && !done)

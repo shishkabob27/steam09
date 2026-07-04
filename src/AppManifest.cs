@@ -5,12 +5,12 @@ public static class AppManifest
 	const string StateFlagsInstalled = "4";
 	const string StateFlagsDownloading = "1026";
 
-	public static string GetPath(int appId) =>
+	public static string GetPath(uint appId) =>
 		Utils.GetAbsolutePath(Path.Combine("steamapps", $"appmanifest_{appId}.acf"));
 
-	public static bool Exists(int appId) => File.Exists(GetPath(appId));
+	public static bool Exists(uint appId) => File.Exists(GetPath(appId));
 
-	public static KeyValue? TryLoad(int appId)
+	public static KeyValue? TryLoad(uint appId)
 	{
 		var path = GetPath(appId);
 		if (!File.Exists(path))
@@ -21,7 +21,7 @@ public static class AppManifest
 		return KeyValue.LoadAsText(path);
 	}
 
-	public static void Delete(int appId)
+	public static void Delete(uint appId)
 	{
 		var path = GetPath(appId);
 		if (File.Exists(path))
@@ -40,7 +40,7 @@ public static class AppManifest
 		return manifest["AppState"];
 	}
 
-	public static bool IsAppInstalled(int appId, string installFolderName)
+	public static bool IsAppInstalled(uint appId, string installFolderName)
 	{
 		if (!Exists(appId))
 		{
@@ -69,9 +69,9 @@ public static class AppManifest
 		return installedDepots != KeyValue.Invalid && installedDepots.Children.Count > 0;
 	}
 
-	public static bool HasPartialInstall(int appId, string installFolderName) => Exists(appId) && !IsAppInstalled(appId, installFolderName);
+	public static bool HasPartialInstall(uint appId, string installFolderName) => Exists(appId) && !IsAppInstalled(appId, installFolderName);
 
-	public static Dictionary<uint, ulong> GetInstalledDepots(int appId)
+	public static Dictionary<uint, ulong> GetInstalledDepots(uint appId)
 	{
 		var result = new Dictionary<uint, ulong>();
 		var manifest = TryLoad(appId);
@@ -109,12 +109,12 @@ public static class AppManifest
 		return result;
 	}
 
-	public static void WriteDownloading(int appId, string name, string installFolderName, ulong bytesToDownload, ulong bytesDownloaded, ulong lastOwner)
+	public static void WriteDownloading(uint appId, string name, string installFolderName, ulong bytesToDownload, ulong bytesDownloaded, ulong lastOwner)
 	{
 		WriteManifest(appId, name, installFolderName, buildId: 0, lastOwner, bytesToDownload, bytesDownloaded, StateFlagsDownloading, installedDepots: null);
 	}
 
-	public static void UpdateDownloadProgress(int appId, ulong bytesDownloaded, ulong bytesToDownload)
+	public static void UpdateDownloadProgress(uint appId, ulong bytesDownloaded, ulong bytesToDownload)
 	{
 		var manifest = TryLoad(appId);
 		if (manifest == null)
@@ -135,7 +135,7 @@ public static class AppManifest
 		appState.SaveToFile(GetPath(appId), false);
 	}
 
-	public static void Write(int appId, string name, string installFolderName, uint buildId, ulong lastOwner, Dictionary<uint, ulong> installedDepots)
+	public static void Write(uint appId, string name, string installFolderName, uint buildId, ulong lastOwner, Dictionary<uint, ulong> installedDepots)
 	{
 		string installDir = Utils.GetAbsolutePath(Path.Combine("steamapps", "common", installFolderName));
 		ulong sizeOnDisk = CalculateInstallSize(installDir);
@@ -145,7 +145,7 @@ public static class AppManifest
 		appState.SaveToFile(GetPath(appId), false);
 	}
 
-	static KeyValue WriteManifest(int appId, string name, string installFolderName, uint buildId, ulong lastOwner, ulong bytesToDownload, ulong bytesDownloaded, string stateFlags, Dictionary<uint, ulong>? installedDepots)
+	static KeyValue WriteManifest(uint appId, string name, string installFolderName, uint buildId, ulong lastOwner, ulong bytesToDownload, ulong bytesDownloaded, string stateFlags, Dictionary<uint, ulong>? installedDepots)
 	{
 		var appState = new KeyValue("AppState");
 

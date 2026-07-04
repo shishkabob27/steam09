@@ -25,8 +25,8 @@ namespace DepotDownloader
 		public Dictionary<uint, ulong> PackageTokens => Steam.Instance.LibraryDataCache.PackageTokens;
 		public Dictionary<uint, byte[]> DepotKeys { get; } = [];
 		public ConcurrentDictionary<(uint, string), TaskCompletionSource<SteamContent.CDNAuthToken>> CDNAuthTokens { get; } = [];
-		public Dictionary<uint, SteamApps.PICSProductInfoCallback.PICSProductInfo> AppInfo { get; } = [];
-		public Dictionary<uint, SteamApps.PICSProductInfoCallback.PICSProductInfo> PackageInfo { get; } = [];
+		public Dictionary<uint, SteamApps.PICSProductInfoCallback.PICSProductInfo> AppInfo => Steam.Instance.LibraryDataCache.AppInfo;
+		public Dictionary<uint, SteamApps.PICSProductInfoCallback.PICSProductInfo> PackageInfo => Steam.Instance.LibraryDataCache.PackageInfo;
 		public Dictionary<string, byte[]> AppBetaPasswords { get; } = [];
 
 		public SteamClient steamClient => Steam.Instance.steamClient;

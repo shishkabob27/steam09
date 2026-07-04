@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using DepotDownloader;
 using KGUI;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SteamKit2;
@@ -57,6 +58,7 @@ public partial class Steam
 			{
 				if (app.Value != null)
 				{
+					LibraryDataCache.PackageInfo[app.Value.ID] = app.Value;
 					if (app.Value.KeyValues["common"]["appids"] != null)
 					{
 						KeyValue appidsToken = app.Value.KeyValues["appids"];
@@ -90,6 +92,7 @@ public partial class Steam
 			{
 				if (app.Value != null)
 				{
+					LibraryDataCache.AppInfo[app.Value.ID] = app.Value;
 					allRetrievedAppIds.Add(app.Value.ID);
 
 					//update app if it exist
@@ -102,7 +105,7 @@ public partial class Steam
 					{						
 						Game game = new()
 						{ 
-							AppID = (int)app.Value.ID, 
+							AppID = app.Value.ID, 
 						};
 						game.ParseAppInfo(app.Value.KeyValues);
 						Games.Add(game);
@@ -158,9 +161,176 @@ public partial class Steam
 		game.LaunchAppTaskStatus = LaunchAppTaskStatus.DelayLaunch;
 		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, "preparingtolaunchwindow_" + game.AppID);
 		preparingToLaunchWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
-		preparingToLaunchWindow.SetGame(game);
-		preparingToLaunchWindow.SetLaunchConfig(launchConfig);
+		preparingToLaunchWindow.SetGame(game, launchConfig);
 		WindowManager.Instance.CreateWindow(preparingToLaunchWindow);
+	}
+
+	public void OnSelectedLaunchConfigChanged(Game game, LaunchConfig launchConfig)
+	{
+		game.LaunchAppTaskStatus = LaunchAppTaskStatus.RunningInstallScript;
+		RunInstallScripts(game);
+	}
+
+	public async Task RunInstallScripts(Game game)
+	{
+		if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+		{
+			CompleteInstallScript(game);
+			return;
+		}
+
+		KeyValue? appInfo = LibraryDataCache.GetAppInfo(game.AppID);
+		if (appInfo == null)
+		{
+			CompleteInstallScript(game);
+			return;
+		}
+
+		var installScript = appInfo["install"];
+		if (installScript == KeyValue.Invalid)
+		{
+			CompleteInstallScript(game);
+			return;
+		}
+		
+		var RunProcesses = installScript["Run Process"];
+		if (RunProcesses != KeyValue.Invalid)
+		{
+			foreach (var runProcess in RunProcesses.Children)
+			{
+				string? ProcessName = runProcess.Name;
+				if (ProcessName == null)
+					continue;
+
+				bool installRequired = false;
+
+				var preReqRunKey = runProcess["HasRunKey"];
+				string? preReqRun = null;
+				if (preReqRunKey != KeyValue.Invalid)
+				{
+					preReqRun = preReqRunKey.AsString();
+					if (!string.IsNullOrEmpty(preReqRun))
+					{
+						preReqRun = preReqRun.Replace("HKEY_LOCAL_MACHINE\\", "", StringComparison.OrdinalIgnoreCase);
+						installRequired = !GetRunKeyRegistryValue(preReqRun, ProcessName);
+					}
+				}
+
+				if (!installRequired)
+					continue;
+
+				game.LaunchAppTaskStatus = LaunchAppTaskStatus.RunningInstallScript;
+
+				var processKey = runProcess["Process 1"];
+				if (processKey == KeyValue.Invalid)
+					continue;
+				string? processPath = processKey.AsString();
+				if (string.IsNullOrEmpty(processPath))
+					continue;
+				processPath = InsertEnvironmentVariables(processPath, game);
+
+				string? arguments = "";
+				var argumentsKey = runProcess["Command 1"];
+				if (argumentsKey != KeyValue.Invalid)
+					arguments = argumentsKey.AsString() ?? "";
+				arguments = InsertEnvironmentVariables(arguments, game);
+
+				Console.WriteLine($"{ProcessName}: Running process: {processPath} with arguments: {arguments}");
+
+				int installSuccess = RunInstallProcess(processPath, arguments);
+
+				//set run key value to 1
+				if (!string.IsNullOrEmpty(preReqRun))
+				{
+					Registry.LocalMachine.SetValue($"{preReqRun}" + ProcessName, installSuccess == 0 ? "1" : "0", RegistryValueKind.DWord);
+				}
+			}
+		}
+
+		CompleteInstallScript(game);
+	}
+
+	void CompleteInstallScript(Game game)
+	{
+		game.LaunchAppTaskStatus = LaunchAppTaskStatus.DelayLaunch;
+	}
+
+	static void SetRunKeyRegistryValue(string preReqRun, string processName, int installSuccess)
+	{
+		Registry.LocalMachine.SetValue($"{preReqRun}" + processName, installSuccess == 0 ? "1" : "0", RegistryValueKind.DWord);
+	}
+
+	static bool GetRunKeyRegistryValue(string preReqRun, string processName)
+	{
+		RegistryView[] viewsToTry = { RegistryView.Registry64, RegistryView.Registry32 };
+		foreach (var view in viewsToTry)
+		{
+			if (RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view)?.OpenSubKey(preReqRun)?.GetValue(processName)?.ToString() == "1")
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static int RunInstallProcess(string processPath, string arguments)
+	{
+		ProcessStartInfo startInfo = new()
+		{
+			FileName = processPath,
+			Arguments = arguments,
+			WindowStyle = ProcessWindowStyle.Normal,
+			UseShellExecute = false
+		};
+
+		try
+		{
+			Process? process = Process.Start(startInfo);
+			if (process != null)
+			{
+				process.WaitForExit();
+				return process.ExitCode;
+			}
+			return 1;
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine("Failed to start process, attempting to start with shell execute: " + e.Message);
+			
+			//attempt to start with shell execute
+			startInfo.UseShellExecute = true;
+			try
+			{
+				Process? process = Process.Start(startInfo);
+				if (process != null)
+				{
+					process.WaitForExit();
+					return process.ExitCode;
+				}
+				return 1;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Failed to start process with shell execute: " + ex.Message);
+				Console.WriteLine(ex.StackTrace);
+				return 1;
+			}
+		}
+	}
+
+	static string InsertEnvironmentVariables(string? text, Game game)
+	{
+		if (string.IsNullOrEmpty(text)) return string.Empty;
+
+		text = text.Replace("%INSTALLDIR%", Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%ROOTDRIVE%", Environment.SystemDirectory?[0].ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%APPDATA%", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%USER_MYDOCS%", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%COMMON_MYDOCS%", Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%LOCAL_APPDATA%", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%WinDir%", Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase);
+		text = text.Replace("%STEAMPATH%", Utils.GetAbsolutePath(""), StringComparison.OrdinalIgnoreCase);
+		return text;
 	}
 
 	//Will launch the game with the given launch config

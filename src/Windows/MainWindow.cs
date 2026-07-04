@@ -23,8 +23,8 @@ public class MainWindow : SteamWindow
 	ButtonControl GameActionButton; // Install, Launch
 	ButtonControl PropertiesButton; // game properties
 
-	int selectedGameID = -1;
-	int selectedToolID = -1;
+	uint selectedGameID = uint.MaxValue;
+	uint selectedToolID = uint.MaxValue;
 
 	ListViewControl gameList;
 	ListViewControl toolsList;
@@ -502,11 +502,11 @@ public class MainWindow : SteamWindow
 	}
 	
 	// //called when the game is double clicked in the game list or the game action button is clicked while a game is selected
-	async void OnGameAction(int gameID = -1)
+	async void OnGameAction(uint gameID = uint.MaxValue)
 	{
 		if (inBrowserWindow) return;
 
-		if (gameID == -1)
+		if (gameID == uint.MaxValue)
 		{
 			if (currentlistView == "game")
 				gameID = selectedGameID;
@@ -547,11 +547,11 @@ public class MainWindow : SteamWindow
 		}
 	}
 
-	void OnGameProperties(int gameID = -1)
+	void OnGameProperties(uint gameID = uint.MaxValue)
 	{
 		if (inBrowserWindow) return;
 
-		if (gameID == -1)
+		if (gameID == uint.MaxValue)
 		{
 			if (currentlistView == "game")
 				gameID = selectedGameID;
@@ -575,7 +575,7 @@ public class MainWindow : SteamWindow
 
 	void SaveFavorites()
 	{
-		List<int> favoriteAppIds = new List<int>();
+		List<uint> favoriteAppIds = new List<uint>();
 		foreach (var game in client.Games)
 		{
 			if (game.IsFavorite)
@@ -592,7 +592,7 @@ public class MainWindow : SteamWindow
 		if (File.Exists(Utils.GetAbsolutePath($"userdata/{client.CurrentUser.SteamID}/config/favorites.json")))
 		{
 			string favoritesJson = File.ReadAllText(Utils.GetAbsolutePath($"userdata/{client.CurrentUser.SteamID}/config/favorites.json"));
-			List<int> favoriteAppIds = JsonConvert.DeserializeObject<List<int>>(favoritesJson);
+			List<uint> favoriteAppIds = JsonConvert.DeserializeObject<List<uint>>(favoritesJson);
 			foreach (var appId in favoriteAppIds)
 			{
 				Game game = client.Games.Find(x => x.AppID == appId);

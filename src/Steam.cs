@@ -116,6 +116,8 @@ public partial class Steam
 
 		Registry.LocalMachine.CreateSubKey("Software\\WOW6432Node\\Valve\\Steam").SetValue("InstallPath", steam09Path);
 		Registry.LocalMachine.CreateSubKey("Software\\WOW6432Node\\Valve\\Steam").SetValue("SteamPID", Process.GetCurrentProcess().Id);
+		Registry.LocalMachine.CreateSubKey("Software\\Valve\\Steam").SetValue("InstallPath", steam09Path);
+		Registry.LocalMachine.CreateSubKey("Software\\Valve\\Steam").SetValue("SteamPID", Process.GetCurrentProcess().Id);
 
 		Registry.CurrentUser.CreateSubKey("Software\\Classes\\steam\\Shell\\Open\\Command").SetValue("", $"{steam09Path}\\steam09.exe %1");
 
@@ -127,7 +129,7 @@ public partial class Steam
 		Registry.CurrentUser.CreateSubKey("Software\\Valve\\Steam\\ActiveProcess").SetValue("SteamClientDll64", $"{steam09Path}\\steamclient64.dll");
 	}
 
-	void SetupGameEnvironmentVariables(int appID)
+	void SetupGameEnvironmentVariables(uint appID)
 	{
 		Environment.SetEnvironmentVariable("SteamAppId", appID.ToString());
 		Environment.SetEnvironmentVariable("SteamGameId", appID.ToString());
