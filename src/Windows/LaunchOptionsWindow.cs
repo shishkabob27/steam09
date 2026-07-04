@@ -23,6 +23,7 @@ public class LaunchOptionsWindow : SteamWindow
 		launchButton.OnClick += Launch;
 		cancelButton.OnClick += (control) =>
 		{
+			game.LaunchAppTaskStatus = LaunchAppTaskStatus.None;
 			WindowManager.Instance.CloseWindow(this);
 		};
 	}

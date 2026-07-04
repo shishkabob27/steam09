@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using DepotDownloader;
 using KGUI;
 using Newtonsoft.Json;
@@ -149,6 +150,7 @@ public partial class Steam
 			return;
 		}
 
+		game.LaunchAppTaskStatus = LaunchAppTaskStatus.ShowLaunchOption;
 		LaunchOptionsWindow launchOptionsWindow = new(this, "launchoptionswindow_" + game.AppID);
 		launchOptionsWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 		launchOptionsWindow.SetGame(game);
@@ -158,6 +160,7 @@ public partial class Steam
 
 	public void BeginLaunchGame(Game game, LaunchConfig launchConfig)
 	{
+		game.LaunchAppTaskStatus = LaunchAppTaskStatus.DelayLaunch;
 		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, "preparingtolaunchwindow_" + game.AppID);
 		preparingToLaunchWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 		preparingToLaunchWindow.SetGame(game);
@@ -168,6 +171,7 @@ public partial class Steam
 	//Will launch the game with the given launch config
 	public async void LaunchGameProcess(Game game, LaunchConfig launchConfig)
 	{
+		game.LaunchAppTaskStatus = LaunchAppTaskStatus.CreatingProcess;
 		SetupGameEnvironmentVariables(game.AppID);
 
 		Console.WriteLine($"Launching \"{Utils.GetAbsolutePath("steamapps/common/" + game.InstallFolderName + "/" + launchConfig.Executable)}\" with arguments: \"{launchConfig.Arguments}\"");
@@ -188,7 +192,7 @@ public partial class Steam
 			if (process != null)
 			{
 				runningGameProcesses.Add(new Tuple<Process, Game>(process, game));
-				game.IsRunning = true;
+				game.LaunchAppTaskStatus = LaunchAppTaskStatus.Completed;
 			}
 		}
 		catch (Exception e)
@@ -209,7 +213,7 @@ public partial class Steam
 		{
 			if (runningGameProcesses[i].Item1.HasExited)
 			{
-				runningGameProcesses[i].Item2.IsRunning = false;
+				runningGameProcesses[i].Item2.LaunchAppTaskStatus = LaunchAppTaskStatus.None;
 				runningGameProcesses.RemoveAt(i);
 			}
 		}

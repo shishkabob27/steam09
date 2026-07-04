@@ -9,9 +9,9 @@ public class Game
 	public string Type { get; set; }
 	public GameStatus Status { get; set; } = GameStatus.NotInstalled;
 	public DownloadStatus DownloadStatus { get; set; } = DownloadStatus.None;
+	public LaunchAppTaskStatus LaunchAppTaskStatus { get; set; } = LaunchAppTaskStatus.None;
 	public float InstallProgress { get; set; } = 0; // set by ContentDownloader
 	public bool HasPartialDownload { get; set; } = false;
-	public bool IsRunning { get; set; } = false;
 
 	public string Developer { get; set; } = "Unknown";
 	public string InstallFolderName { get; set; } = string.Empty;
@@ -108,10 +108,11 @@ public class Game
 
 	public string GetStatusString()
 	{
-		if (IsRunning)
-		{
+		if (LaunchAppTaskStatus == LaunchAppTaskStatus.Completed)
 			return "Running";
-		}
+		else if (LaunchAppTaskStatus != LaunchAppTaskStatus.None)
+			return "Launching";
+
 		switch (Status)
 		{
 			case GameStatus.NotInstalled:
