@@ -17,9 +17,7 @@ public partial class Steam
 
 	public DownloadManager DownloadManager = new DownloadManager();
 
-	public ReadOnlyCollection<SteamApps.LicenseListCallback.License> AppLicenses { get; private set; }
-	public Dictionary<uint, ulong> PackageTokens { get;  set; } = [];
-	public Dictionary<uint, ulong> AppTokens { get;  set; } = new Dictionary<uint, ulong>();
+	public LibraryDataCache LibraryDataCache = new LibraryDataCache();
 
 	private async void LicenseListCallback(SteamApps.LicenseListCallback licenseList)
 	{
@@ -31,14 +29,14 @@ public partial class Steam
 		}
 
 		Console.WriteLine("Got {0} licenses for account! Waiting for package info...", licenseList.LicenseList.Count);
-		AppLicenses = licenseList.LicenseList;
+		LibraryDataCache.AppLicenses = licenseList.LicenseList;
 
 		List<SteamApps.PICSRequest> PackageRequests = new List<SteamApps.PICSRequest>();
 		foreach (var license in licenseList.LicenseList)
 		{
-			if (!PackageTokens.ContainsKey(license.PackageID))
+			if (!LibraryDataCache.PackageTokens.ContainsKey(license.PackageID))
 			{
-				PackageTokens.Add(license.PackageID, license.AccessToken);
+				LibraryDataCache.PackageTokens.Add(license.PackageID, license.AccessToken);
 			}
 			PackageRequests.Add(new SteamApps.PICSRequest(license.PackageID, license.AccessToken));
 		}
@@ -77,14 +75,14 @@ public partial class Steam
 		var accessTokens = await steamApps.PICSGetAccessTokens(appids, []);
 		foreach (var token in accessTokens.AppTokens)
 		{
-			AppTokens[token.Key] = token.Value;
+			LibraryDataCache.AppTokens[token.Key] = token.Value;
 		}
 
 		Console.WriteLine("Got access tokens for apps! Waiting for app info...");
 
-		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, AppTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
+		var appInfo = await steamApps.PICSGetProductInfo(appids.Select(id => new SteamApps.PICSRequest(id, LibraryDataCache.AppTokens.TryGetValue(id, out ulong token) ? token : 0)).ToList(), []);
 
-		List<string> allRetrievedAppIds = new List<string>();
+		List<uint> allRetrievedAppIds = [];
 
 		foreach (var appResult in appInfo.Results)
 		{
@@ -92,10 +90,7 @@ public partial class Steam
 			{
 				if (app.Value != null)
 				{
-					allRetrievedAppIds.Add(app.Value.ID.ToString());
-
-					Directory.CreateDirectory(Utils.GetAbsolutePath($"appcache/librarycache/{app.Value.ID}"));
-					app.Value.KeyValues.SaveToFile(Utils.GetAbsolutePath($"appcache/librarycache/{app.Value.ID}/appinfo.vdf"), false);
+					allRetrievedAppIds.Add(app.Value.ID);
 
 					//update app if it exist
 					if (Games.Any(g => g.AppID == app.Value.ID))
@@ -118,7 +113,7 @@ public partial class Steam
 
 		//save to users games.json
 		string gamesJson = JsonConvert.SerializeObject(allRetrievedAppIds, Formatting.None);
-		File.WriteAllText(Utils.GetAbsolutePath($"userdata/{steamClient?.SteamID?.ConvertToUInt64() ?? 0}/games.json"), gamesJson);
+		File.WriteAllText(Utils.GetAbsolutePath($"userdata/{steamClient?.SteamID?.ConvertToUInt64() ?? 0}/owned_apps.json"), gamesJson);
 
 		foreach (Game game in Games)
 		{

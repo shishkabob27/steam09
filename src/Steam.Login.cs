@@ -34,9 +34,6 @@ public partial class Steam
 
 		users.Add(user);
 		File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), JsonConvert.SerializeObject(users, Formatting.Indented));
-
-		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}"));
-		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}/config"));
 	}
 
 	void RemoveLoginUser(User user)
@@ -74,6 +71,9 @@ public partial class Steam
 
 		//write file
 		File.WriteAllText(Utils.GetAbsolutePath("config/loginusers.json"), JsonConvert.SerializeObject(users, Formatting.Indented));
+
+		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}"));
+		Directory.CreateDirectory(Utils.GetAbsolutePath($"userdata/{user.SteamID}/config"));
 	}
 
 	bool AttemptCachedLogin()

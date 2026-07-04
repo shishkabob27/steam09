@@ -19,10 +19,10 @@ namespace DepotDownloader
 	{
 		public bool IsLoggedOn { get; private set; }
 
-		public ReadOnlyCollection<SteamApps.LicenseListCallback.License> Licenses => Steam.Instance.AppLicenses;
+		public ReadOnlyCollection<SteamApps.LicenseListCallback.License> Licenses => Steam.Instance.LibraryDataCache.AppLicenses;
 
-		public Dictionary<uint, ulong> AppTokens => Steam.Instance.AppTokens;
-		public Dictionary<uint, ulong> PackageTokens => Steam.Instance.PackageTokens;
+		public Dictionary<uint, ulong> AppTokens => Steam.Instance.LibraryDataCache.AppTokens;
+		public Dictionary<uint, ulong> PackageTokens => Steam.Instance.LibraryDataCache.PackageTokens;
 		public Dictionary<uint, byte[]> DepotKeys { get; } = [];
 		public ConcurrentDictionary<(uint, string), TaskCompletionSource<SteamContent.CDNAuthToken>> CDNAuthTokens { get; } = [];
 		public Dictionary<uint, SteamApps.PICSProductInfoCallback.PICSProductInfo> AppInfo { get; } = [];
