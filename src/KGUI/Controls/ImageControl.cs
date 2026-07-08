@@ -1,12 +1,11 @@
 using System.Drawing;
+using System.Numerics;
 using System.Xml.Serialization;
-using SDL;
 
 namespace KGUI.Controls
 {
 	public class ImageControl : UIControl
     {
-        unsafe SDL_Texture* imageTexture;
         public Color backgroundColor = Color.Transparent;
 
         public int imageWidth = 0;
@@ -52,26 +51,12 @@ namespace KGUI.Controls
             this.imageUrl = newUrl;
 			this.scaleMode = scaleMode;
 
-            unsafe
-            {
-                if (imageTexture != null)
-                {
-                    SDL3.SDL_DestroyTexture(imageTexture);
-                    imageTexture = null;
-                }
-          
-				imageTexture = LoadTexture(newUrl);
-				if (imageTexture != null)
-				{
-					float widthF, heightF;
-					SDL3.SDL_GetTextureSize(imageTexture, &widthF, &heightF);
-					imageWidth = (int)widthF;
-					imageHeight = (int)heightF;
-				}
-			}
+			Vector2 textureSize = parent.GetTextureSize(newUrl);
+			imageWidth = (int)textureSize.X;
+			imageHeight = (int)textureSize.Y;
 		}
 
-        public unsafe override void Draw()
+        public override void Draw()
         {
             base.Draw();
 
@@ -79,12 +64,10 @@ namespace KGUI.Controls
 			{
 				DrawBox(0, 0, width, height, backgroundColor);
 			}
-			if (imageTexture == null)
-				return;
 
 			if (scaleMode == ImageScaleMode.Stretch)
 			{
-				DrawTexture(imageTexture, 0, 0);
+				DrawTexture(imageUrl, 0, 0);
 			}
 			else if (scaleMode == ImageScaleMode.Fit)
 			{
@@ -106,7 +89,7 @@ namespace KGUI.Controls
 				int drawX = (width - drawWidth) / 2;
 				int drawY = (height - drawHeight) / 2;
 
-				DrawTextureRect(imageTexture, drawX, drawY, drawWidth, drawHeight);
+				DrawTextureRect(imageUrl, drawX, drawY, drawWidth, drawHeight);
 			}
 			else if (scaleMode == ImageScaleMode.Fill)
 			{
@@ -128,7 +111,7 @@ namespace KGUI.Controls
 				int drawX = (width - drawWidth) / 2;
 				int drawY = (height - drawHeight) / 2;
 
-				DrawTextureRect(imageTexture, drawX, drawY, drawWidth, drawHeight);
+				DrawTextureRect(imageUrl, drawX, drawY, drawWidth, drawHeight);
 			}
 			else if (scaleMode == ImageScaleMode.LoopX || scaleMode == ImageScaleMode.LoopY || scaleMode == ImageScaleMode.LoopBoth)
 			{
@@ -144,23 +127,17 @@ namespace KGUI.Controls
 					yRepeats = (int)Math.Ceiling((float)height / imageHeight);
 				}
 
+				xRepeats = Math.Min(xRepeats, 512);
+				yRepeats = Math.Min(yRepeats, 512);
+
 				for (int y = 0; y < yRepeats; y++)
 				{
 					for (int x = 0; x < xRepeats; x++)
 					{
-						DrawTexture(imageTexture, x * imageWidth, y * imageHeight);
+						DrawTexture(imageUrl, x * imageWidth, y * imageHeight);
 					}
 				}
 			}
 		}
-
-        public override void Destroy()
-        {
-            base.Destroy();
-            unsafe
-			{
-                SDL3.SDL_DestroyTexture(imageTexture);
-            }
-        }
     }
 }

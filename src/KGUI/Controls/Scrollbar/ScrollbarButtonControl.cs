@@ -1,24 +1,17 @@
 using System.Drawing;
-using SDL;
 
 namespace KGUI.Controls
 {
 	public class ScrollbarButtonControl : ButtonControl
 	{
 		public bool Up = false;
-		//unsafe SDL_Texture* texture;
 
 		public ScrollbarButtonControl(UIControl parent) : base(parent)
 		{
-			// unsafe {
-			// 	texture = LoadTexture(Assets.GetAssetPath("graphics/scrollbar_button_" + (this.Up ? "up" : "down") + ".png"));
-			// }
 		}
 
 		public override void Draw()
 		{
-			// DrawTexture(texture, 0, 0);
-
 			//content
 			DrawBox(1, 1, width - 2, height - 2, Color.FromArgb(104, 106, 101));
 

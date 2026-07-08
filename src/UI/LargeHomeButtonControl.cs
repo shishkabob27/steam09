@@ -2,29 +2,24 @@ using System.Drawing;
 using System.Xml.Serialization;
 using KGUI;
 using KGUI.Controls;
-using SDL;
 
 public class LargeHomeButtonControl : ButtonControl
 {
 	[XmlAttribute("homeIndex")]
 	public int homeIndex = 0;
 
-	unsafe SDL_Texture* texture;
+	private static readonly string BOTTOM_BUTTONS_TEXTURE = Assets.GetAssetPath("graphics/bottom_buttons.png");
 
 	public LargeHomeButtonControl(UIControl parent) : base(parent)
 	{
 		this.text = Localization.GetString(text);
-
-		unsafe {
-			texture = LoadTexture(Assets.GetAssetPath("graphics/bottom_buttons.png"));
-		}
 	}
 
-	public unsafe override void Draw()
+	public override void Draw()
 	{
-		if (mouseDown) DrawTextureSheet(texture, 0, 0, homeIndex, 2, 100, 52);
-		else if (mouseOver) DrawTextureSheet(texture, 0, 0, homeIndex, 1, 100, 52);
-		else DrawTextureSheet(texture, 0, 0, homeIndex, 0, 100, 52);
+		if (mouseDown) DrawTextureSheet(BOTTOM_BUTTONS_TEXTURE, 0, 0, homeIndex, 2, 100, 52);
+		else if (mouseOver) DrawTextureSheet(BOTTOM_BUTTONS_TEXTURE, 0, 0, homeIndex, 1, 100, 52);
+		else DrawTextureSheet(BOTTOM_BUTTONS_TEXTURE, 0, 0, homeIndex, 0, 100, 52);
 
 		int textX = 51;
 		int textY = 41;
@@ -48,14 +43,6 @@ public class LargeHomeButtonControl : ButtonControl
 				textX++;
 				DrawText(Localization.GetString("Steam_Support"), textX, textY, textColor, alignment: FontAlignment.Center);
 				break;
-		}
-	}
-
-	public override void Destroy()
-	{
-		base.Destroy();
-		unsafe {
-			SDL3.SDL_DestroyTexture(texture);
 		}
 	}
 }

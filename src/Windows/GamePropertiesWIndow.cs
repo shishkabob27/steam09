@@ -10,8 +10,9 @@ public class GamePropertiesWindow : SteamWindow
 
 	int tabIndex = 0;
 
+	public GamePropertiesWindow(Steam steam, string uuid) : base(steam, uuid) {}
 
-	public GamePropertiesWindow(Steam steam, string uuid) : base(steam, uuid)
+	public override void PostInitialize()
 	{
 
 		closeButton = panel.GetControlByID<ButtonControl>("CloseButton");
@@ -39,7 +40,7 @@ public class GamePropertiesWindow : SteamWindow
 	public void SetGame(Game game)
 	{
 		this._game = game;
-		SetTitle(Localization.GetString("Steam_GameProperties_Title").Replace("%game%", game.Name));
+		backendWindow.SetTitle(Localization.GetString("Steam_GameProperties_Title").Replace("%game%", game.Name));
 	}
 
 	public void OnTabSelected(string tabName)
@@ -66,6 +67,6 @@ public class GamePropertiesWindow : SteamWindow
 
 	void OnCloseButtonClicked()
 	{
-		WindowManager.Instance.CloseWindow(this);
+		windowEnvironment.RemoveWindow(this);
 	}
 }

@@ -1,5 +1,4 @@
 using System.Drawing;
-using SDL;
 
 namespace KGUI.Controls
 {

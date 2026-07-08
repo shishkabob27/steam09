@@ -9,8 +9,12 @@ public class FriendsWindow : SteamWindow
 
 	ListViewControl FriendListControl;
 
-	public FriendsWindow(Steam steam, string uuid) : base(steam, uuid)
-	{
+	public FriendsWindow(Steam steam, string uuid) : base(steam, uuid) {}
+
+	public override void PostInitialize()
+	{		
+		backendWindow.SetTitle($"Friends - {client.CurrentUser.AccountName}");
+		
 		FriendListControl = panel.GetControlByID<ListViewControl>("friendListControl");
 
 		FriendListControl.AddChild(new SolidBackgroundControl(FriendListControl) { height = 12 });
@@ -18,7 +22,7 @@ public class FriendsWindow : SteamWindow
 		//self
 		FriendItemControl selfFriendItemControl = new FriendItemControl(FriendListControl);
 		selfFriendItemControl.SetSize(200, 48);
-		selfFriendItemControl.SetSelf(steam.CurrentUser);
+		selfFriendItemControl.SetSelf(client.CurrentUser);
 		selfFriendItemControl.Self = true;
 		selfFriendItemControl.DrawBackground = false;
 		SelfFriendItemControl = selfFriendItemControl;
@@ -32,16 +36,6 @@ public class FriendsWindow : SteamWindow
 		FriendListControl.AddChild(new SolidBackgroundControl(FriendListControl) { height = 8 });
 
 		panel.SetFocus(FriendListControl);
-	}
-
-	public override void Update(float deltaTime)
-	{
-		base.Update(deltaTime);
-	}
-
-	public override void Draw()
-	{
-		base.Draw();
 	}
 
 	public void LoadFriendList()

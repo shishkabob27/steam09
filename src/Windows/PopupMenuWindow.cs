@@ -8,7 +8,9 @@ public class PopupMenuWindow : SteamWindow
 
 	ListViewControl list;
 
-	public PopupMenuWindow(Steam steam, string uuid) : base(steam, uuid)
+	public PopupMenuWindow(Steam steam, string uuid) : base(steam, uuid) {}
+
+	public override void PostInitialize()
 	{
 		list = panel.GetControlByID<ListViewControl>("list");
 		//move window to mouse position
@@ -18,7 +20,7 @@ public class PopupMenuWindow : SteamWindow
 			SDL3.SDL_GetGlobalMouseState(&mX, &mY);
 		}
 
-		SetWindowPosition((int)mX, (int)mY);
+		backendWindow.SetWindowPosition((int)mX, (int)mY);
 	}
 
 	public void AddItem(string text, Action<PopupButtonControl>? onClick)
@@ -32,7 +34,7 @@ public class PopupMenuWindow : SteamWindow
 			button.OnClick += (b) =>
 			{
 				onClick(button);
-				WindowManager.Instance.CloseWindow(this);
+				windowEnvironment.RemoveWindow(this);
 			};
 		}
 
@@ -57,7 +59,7 @@ public class PopupMenuWindow : SteamWindow
 			int childWidth = child.MeasureTextWidth(child.text) + PopupButtonControl.TextPaddingX * 2;
 			if (childWidth > maxWidth) maxWidth = childWidth;
 		}
-		SetWindowSize(maxWidth + (WindowBorderSize * 2), list.CalculateContentHeight() + (WindowBorderSize * 2));
+		backendWindow.SetWindowSize(maxWidth + (WindowBorderSize * 2), list.CalculateContentHeight() + (WindowBorderSize * 2));
 	}
 
 	public override void Update(float deltaTime)
@@ -66,7 +68,7 @@ public class PopupMenuWindow : SteamWindow
 
 		if (!KeyboardFocus)
 		{
-			WindowManager.Instance.CloseWindow(this);
+			windowEnvironment.RemoveWindow(this);
 		}
 	}
 }

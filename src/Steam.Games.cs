@@ -150,19 +150,17 @@ public partial class Steam
 
 		game.LaunchAppTaskStatus = LaunchAppTaskStatus.ShowLaunchOption;
 		LaunchOptionsWindow launchOptionsWindow = new(this, "launchoptionswindow_" + game.AppID);
-		launchOptionsWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
+		WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(launchOptionsWindow);
 		launchOptionsWindow.SetGame(game);
 		launchOptionsWindow.SetLaunchConfigs(game.LaunchConfigs);
-		WindowManager.Instance.CreateWindow(launchOptionsWindow);
 	}
 
 	public void BeginLaunchGame(Game game, LaunchConfig launchConfig)
 	{
 		game.LaunchAppTaskStatus = LaunchAppTaskStatus.DelayLaunch;
 		PreparingToLaunchWindow preparingToLaunchWindow = new PreparingToLaunchWindow(this, "preparingtolaunchwindow_" + game.AppID);
-		preparingToLaunchWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
+		WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(preparingToLaunchWindow);
 		preparingToLaunchWindow.SetGame(game, launchConfig);
-		WindowManager.Instance.CreateWindow(preparingToLaunchWindow);
 	}
 
 	public void OnSelectedLaunchConfigChanged(Game game, LaunchConfig launchConfig)

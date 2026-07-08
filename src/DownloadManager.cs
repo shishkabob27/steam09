@@ -242,7 +242,7 @@ public class DownloadManager
 
 	static void NotifyGameUpdate(Game game)
 	{
-		MainWindow? mainWindow = WindowManager.Instance.GetWindows().Find(w => w is MainWindow) as MainWindow;
+		MainWindow? mainWindow = WindowManager.Instance.GetWindowEnvironment("desktop")?.GetWindows()?.OfType<MainWindow>().FirstOrDefault();
 		mainWindow?.QueueGameUpdate(game);
 	}
 }

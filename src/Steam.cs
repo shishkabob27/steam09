@@ -75,6 +75,8 @@ public partial class Steam
 
 		Localization.Initialize("en");
 
+		WindowManager.Instance.AddWindowEnvironment(new DesktopWindowEnvironment() { UUID = "desktop" });
+
 		//if no cached login, show login window
 		if (!AttemptCachedLogin())
 		{
@@ -154,7 +156,7 @@ public partial class Steam
 		{
 			return;
 		}
-		if (WindowManager.Instance.GetWindows().OfType<MainWindow>().Any()) //if main window has already been shown, don't show it again
+		if (WindowManager.Instance.GetWindowEnvironment("desktop")?.GetWindows()?.OfType<MainWindow>().Any() == true) //if main window has already been shown, don't show it again
 		{
 			WindowManager.Instance.HighlightWindow<MainWindow>();
 			return;
@@ -180,32 +182,18 @@ public partial class Steam
 		{
 			Update();
 			Draw();
-
-			unsafe
-			{
-				SDL_Event e;
-				while (SDL3.SDL_PollEvent(&e))
-				{
-					foreach (BaseWindow window in WindowManager.Instance.GetWindows())
-					{
-						window.HandleSDLEvent(e);
-					}
-				}
-			}
 		}
 	}
 
 	public void Update()
 	{
-		UIThread.ProcessPending();
-
 		now = SDL3.SDL_GetTicks() / 1000f;
 		float deltaTime = now - lastTime;
 		lastTime = now;
 
 		TaskIcon?.ProcessMessages();
 
-		manager.RunWaitCallbacks(System.TimeSpan.FromSeconds(0));
+		manager?.RunWaitCallbacks(TimeSpan.FromSeconds(0));
 
 		// Process any queued window creation requests from background threads
 		SteamGuardAuthenticator.ProcessWindowCreationQueue();
@@ -214,24 +202,24 @@ public partial class Steam
 
 		if (loginWindowState == 1)
 		{
-			WindowManager.Instance.CreateWindow(new LoginWindow(this, "login_window"));
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(new LoginWindow(this, "login_window"));
 			loginWindowState = 2;
 		}
 
 		if (mainwindowState == 1)
 		{
 			//hide logging in window
-			WindowManager.Instance.CloseWindow<LoggingInWindow>();
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.RemoveWindow<LoggingInWindow>();
 
 			// //create main window
-			WindowManager.Instance.CreateWindow(new MainWindow(this, "main_window"));
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(new MainWindow(this, "main_window"));
 			mainwindowState = 2;
 		}
 
 		WindowManager.Instance.Update(deltaTime);
 
 		//if no windows exists and the user is not logged in, quit
-		if (WindowManager.Instance.GetWindows().Count == 0 && CurrentUser == null)
+		if (WindowManager.Instance.GetWindowEnvironment("desktop")?.GetWindows()?.Count == 0 && CurrentUser == null)
 		{
 			QuitApplication();
 		}

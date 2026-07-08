@@ -122,7 +122,7 @@ public partial class Steam
 		CurrentUser.SteamID = steamUser.SteamID.ConvertToUInt64();
 		ModifyLoginUser(CurrentUser);
 
-		WindowManager.Instance.CreateWindow(new LoggingInWindow(this, "logging_in_window"));
+		WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(new LoggingInWindow(this, "logging_in_window"));
 	}
 	
 	void OnLoggedOff(SteamUser.LoggedOffCallback callback)

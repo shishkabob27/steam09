@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Xml.Serialization;
-using SDL;
 
 namespace KGUI.Controls
 {
@@ -9,13 +8,9 @@ namespace KGUI.Controls
 		[XmlAttribute("style")]
 		public int style;
 
-		unsafe SDL_Texture* texture;
-
-		public unsafe ButtonControl(UIControl parent) : base(parent)
+		public ButtonControl(UIControl parent) : base(parent)
 		{
 			this.text = Localization.GetString(text);
-
-			//texture = LoadTexture(Assets.GetAssetPath("graphics/button.png"));
 
 			//double clicking a button should still trigger a click event
 			OnDoubleClick += (control) =>
@@ -24,13 +19,9 @@ namespace KGUI.Controls
 			};
 		}
 
-		public unsafe override void Draw()
+		public override void Draw()
 		{
 			base.Draw();
-
-			// {
-			// 	DrawTexture9Grid(texture, 0, 0, width, height, 6, 6, 6, 6, 1.0f);
-			// }
 
 			Color fillColor;
 			if (style == 0)
@@ -45,9 +36,6 @@ namespace KGUI.Controls
 			}
 
 			DrawBox(1, 1, width-2, height-2, fillColor);
-
-			// Rect rect = new Rect(x + 1, y + 1, width - 2, height - 2);
-			// SDL.RenderFillRect(renderer, ref rect);
 
 			//border
 			Color borderColor;
@@ -102,14 +90,6 @@ namespace KGUI.Controls
 				textY += 1;
 			}
 			DrawText(text, textX, textY, textColor);
-		}
-
-		public override void Destroy()
-		{
-			base.Destroy();
-			unsafe {
-				SDL3.SDL_DestroyTexture(texture);
-			}
 		}
 	}
 }

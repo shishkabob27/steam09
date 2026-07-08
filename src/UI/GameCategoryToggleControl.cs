@@ -1,7 +1,6 @@
 using System.Drawing;
 using KGUI;
 using KGUI.Controls;
-using SDL;
 
 public class GameCategoryToggleControl : TreeViewItem
 {
@@ -9,7 +8,7 @@ public class GameCategoryToggleControl : TreeViewItem
 
 	public int categoryIndex;
 
-	unsafe SDL_Texture* _categoryIconTexture;
+	private static readonly string CATEGORY_ICON_TEXTURE = Assets.GetAssetPath("graphics/category_icon.png");
 
 	protected override int GetInitialHeight() => 30;
 
@@ -17,25 +16,19 @@ public class GameCategoryToggleControl : TreeViewItem
 	{
 		SetIsCategory(true);
 		this.height = 30;
-
-		unsafe
-		{
-			_categoryIconTexture = LoadTexture(Assets.GetAssetPath("graphics/category_icon.png"));
-		}
 	}
 
-	public unsafe override void Draw()
+	public override void Draw()
 	{
-
 		if (mouseOver)
 		{
-			if (_expanded) DrawTextureSheet(_categoryIconTexture, 12, 15, 1, 0, 14, 9);
-			else DrawTextureSheet(_categoryIconTexture, 12, 15, 1, 1, 14, 9);
+			if (_expanded) DrawTextureSheet(CATEGORY_ICON_TEXTURE, 12, 15, 1, 0, 14, 9);
+			else DrawTextureSheet(CATEGORY_ICON_TEXTURE, 12, 15, 1, 1, 14, 9);
 		}
 		else
 		{
-			if (_expanded) DrawTextureSheet(_categoryIconTexture, 12, 15, 0, 0, 14, 9);
-			else DrawTextureSheet(_categoryIconTexture, 12, 15, 0, 1, 14, 9);
+			if (_expanded) DrawTextureSheet(CATEGORY_ICON_TEXTURE, 12, 15, 0, 0, 14, 9);
+			else DrawTextureSheet(CATEGORY_ICON_TEXTURE, 12, 15, 0, 1, 14, 9);
 		}
 
 		DrawText(text, 28, GetInitialHeight() - 15, Color.FromArgb(196, 181, 80), fontSize: 7);

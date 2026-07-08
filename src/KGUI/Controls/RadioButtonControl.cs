@@ -1,5 +1,4 @@
 using System.Drawing;
-using SDL;
 
 namespace KGUI.Controls
 {	
@@ -9,7 +8,7 @@ namespace KGUI.Controls
 
 		public Action<bool> OnSelected;
 
-		unsafe SDL_Texture* radioButtonTexture;
+		private static readonly string RADIO_BUTTON_TEXTURE = Assets.GetAssetPath("graphics/radiobutton.png");
 
 		public RadioButtonControl(UIControl parent) : base(parent)
 		{
@@ -17,12 +16,6 @@ namespace KGUI.Controls
 			//this.height = 22;
 			//this.text = text;
 			//this.width = 22 + 25 + parent.steamFont8.MeasureText(text);
-
-			unsafe
-			{
-				radioButtonTexture = LoadTexture(Assets.GetAssetPath("graphics/radiobutton.png"));
-			}
-
 
 			OnClick += (control) =>
 			{
@@ -45,21 +38,18 @@ namespace KGUI.Controls
 		{
 			base.Draw();
 
-			unsafe
-			{				
-				if (enabled)
-				{
-					if (mouseDown) DrawTextureSheet(radioButtonTexture, 0, 0, 2, 0, 22, 22);
-					else if (selected && focused) DrawTextureSheet(radioButtonTexture, 0, 0, 3, 0, 22, 22);
-					else if (selected) DrawTextureSheet(radioButtonTexture, 0, 0, 4, 0, 22, 22);
-					else if (focused) DrawTextureSheet(radioButtonTexture, 0, 0, 6, 0, 22, 22);
-					else DrawTextureSheet(radioButtonTexture, 0, 0, 5, 0, 22, 22);
-				}
-				else
-				{
-					if (selected) parent.DrawTextureSheet(radioButtonTexture, 0, 0, 1, 0, 22, 22);
-					else parent.DrawTextureSheet(radioButtonTexture, 0, 0, 0, 0, 22, 22);
-				}
+			if (enabled)
+			{
+				if (mouseDown) DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 2, 0, 22, 22);
+				else if (selected && focused) DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 3, 0, 22, 22);
+				else if (selected) DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 4, 0, 22, 22);
+				else if (focused) DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 6, 0, 22, 22);
+				else DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 5, 0, 22, 22);
+			}
+			else
+			{
+				if (selected) DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 1, 0, 22, 22);
+				else DrawTextureSheet(RADIO_BUTTON_TEXTURE, 0, 0, 0, 0, 22, 22);
 			}
 
 			//text

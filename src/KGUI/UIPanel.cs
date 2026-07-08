@@ -7,14 +7,13 @@ using System.Xml;
 using System.Xml.Serialization;
 using SDL;
 using KGUI.Controls;
+using System.Numerics;
 
 namespace KGUI
 {
 	public class UIPanel
 	{
 		public BaseWindow window;
-		public SteamFont7? steamFont7;
-		public SteamFont8? steamFont8;
 
 		public RootControl RootControl;
 
@@ -43,31 +42,12 @@ namespace KGUI
 		{
 			this.window = window;
 
-			unsafe
-			{
-				SDL_Surface* surface7 = SDL3_image.IMG_Load(Assets.GetAssetPath("fonts/steamfont7.png"));
-				if (surface7 != null)
-				{
-					SDL_Texture* texture7 = SDL3.SDL_CreateTextureFromSurface(window.renderer, surface7);
-					steamFont7 = new SteamFont7(texture7);
-					SDL3.SDL_DestroySurface(surface7);
-				}
-
-				SDL_Surface* surface8 = SDL3_image.IMG_Load(Assets.GetAssetPath("fonts/steamfont8.png"));
-				if (surface8 != null)
-				{
-					SDL_Texture* texture8 = SDL3.SDL_CreateTextureFromSurface(window.renderer, surface8);
-					steamFont8 = new SteamFont8(texture8);
-					SDL3.SDL_DestroySurface(surface8);
-				}
-			}
-
 			RootControl = new(null)
 			{
-				width = window.GetInternalWidth(),
-				height = window.GetInternalHeight(),
-				x = window.GetInternalX(),
-				y = window.GetInternalY()
+				width = window.widthDefinition,
+				height = window.heightDefinition,
+				x = 0,
+				y = 0
 			};
 			RootControl.SetPanel(this);
 
@@ -81,9 +61,9 @@ namespace KGUI
 				.SelectMany(a =>
 				{
 					try { return a.GetTypes(); }
-					catch { return Array.Empty<Type>(); } // dynamic/unloaded assemblies safety
+					catch { return []; }
 				})
-				.GroupBy(t => t.Name) // or FullName if you want stricter matching
+				.GroupBy(t => t.Name)
 				.ToDictionary(g => g.Key, g => g.First());
 		}
 
@@ -92,7 +72,7 @@ namespace KGUI
 		{
 			foreach (var child in rootNode.ChildNodes)
 			{
-				if (!(child is XmlNode node)) continue;
+				if (child is not XmlNode node) continue;
 
 				InitControlFromLayout(node, RootControl);
 			}
@@ -230,45 +210,29 @@ namespace KGUI
 			field.SetValue(control, convertedValue);
 		}
 
-		public unsafe void DrawText(string text, int x, int y, Color color, bool bold = false, bool underline = false, int fontSize = 8, FontAlignment alignment = FontAlignment.Left)
+		public Vector2 GetTextureSize(string texturePath)
 		{
-			if (fontSize == 7 && steamFont7 != null)
-			{
-				steamFont7.RenderText(window.renderer, text, x, y, color, bold, underline, alignment);
-			}
-			else if (fontSize == 8 && steamFont8 != null)
-			{
-				steamFont8.RenderText(window.renderer, text, x, y, color, bold, underline, alignment);
-			}
+			return window.backendWindow.Renderer.GetTextureSize(texturePath);
+		}
+
+		public void DrawText(string text, int x, int y, Color color, bool bold = false, bool underline = false, int fontSize = 8, FontAlignment alignment = FontAlignment.Left)
+		{
+			window.backendWindow.Renderer.DrawText(text, x, y, color, bold, underline, fontSize, alignment);
 		}
 
 		public void DrawTextWrapped(string text, int x, int y, int maxWidth, Color color, bool bold = false, bool underline = false, int fontSize = 8, FontAlignment alignment = FontAlignment.Left, int lineHeight = 12)
 		{
-			FontRenderer fontRenderer = fontSize == 7 ? steamFont7 : steamFont8;
-			if (fontRenderer == null) return;
-			unsafe {
-				fontRenderer.RenderTextWrapped(window.renderer, text, x, y, maxWidth, color, bold, underline, alignment, lineHeight);
-			}
+			window.backendWindow.Renderer.DrawTextWrapped(text, x, y, maxWidth, color, bold, underline, fontSize, alignment, lineHeight);
 		}
 
 		public int MeasureTextWrappedHeight(string text, int maxWidth, bool bold = false, bool underline = false, int fontSize = 8, int lineHeight = 12)
 		{
-			FontRenderer fontRenderer = fontSize == 7 ? steamFont7 : steamFont8;
-			if (fontRenderer == null) return 0;
-			return fontRenderer.MeasureWrappedHeight(text, maxWidth, bold, lineHeight);
+			return window.backendWindow.Renderer.MeasureTextWrappedHeight(text, maxWidth, bold, underline, fontSize, lineHeight);
 		}
 
-		public int MeasureText(string text, bool bold = false, int fontSize = 8)
+		public int MeasureTextWidth(string text, bool bold = false, int fontSize = 8)
 		{
-			if (fontSize == 7 && steamFont7 != null)
-			{
-				return steamFont7.MeasureText(text, bold);
-			}
-			else if (fontSize == 8 && steamFont8 != null)
-			{
-				return steamFont8.MeasureText(text, bold);
-			}
-			return 0;
+			return window.backendWindow.Renderer.MeasureTextWidth(text, bold, fontSize);
 		}
 
 		public void SetFocus(UIControl control)
@@ -410,11 +374,7 @@ namespace KGUI
 				if (control.x + control.width < 0 || control.x > control.parent.width || control.y + control.height < 0 || control.y > control.parent.height) return;
 			}
 
-			SDL_Rect previousClip;
-			unsafe
-			{
-				SDL3.SDL_GetRenderClipRect(window.renderer, &previousClip);
-			}
+			Rect previousClip = window.backendWindow.Renderer.GetClipRect();
 
 			if (ClipDrawToControl(control, previousClip))
 			{
@@ -425,65 +385,41 @@ namespace KGUI
 				}
 			}
 
-			unsafe
-			{
-				SDL3.SDL_SetRenderClipRect(window.renderer, &previousClip);
-			}
+			window.backendWindow.Renderer.SetClipRect(previousClip);
 		}
 
 		public void ClipDrawToWindow()
 		{
-			SDL_Rect clipRect = new SDL_Rect();
-			clipRect.x = window.GetInternalX();
-			clipRect.y = window.GetInternalY();
-			clipRect.w = window.GetInternalWidth();
-			clipRect.h = window.GetInternalHeight();
-			unsafe {
-				SDL3.SDL_SetRenderClipRect(window.renderer, &clipRect);
-			}
+			window.backendWindow.Renderer.SetClipRect(new Rect(window.GetInternalX(), window.GetInternalY(), window.GetInternalWidth(), window.GetInternalHeight()));
 		}
 
-		public bool ClipDrawToControl(UIControl control, SDL_Rect previousClip, bool border = false)
+		public bool ClipDrawToControl(UIControl control, Rect previousClip, bool border = false)
 		{
-			SDL_Rect requestedClip = new SDL_Rect();
-			requestedClip.x = control.GetAbsoluteX();
-			requestedClip.y = control.GetAbsoluteY();
-			requestedClip.w = control.width;
-			requestedClip.h = control.height;
+			Rect requestedClip = new Rect(control.GetAbsoluteX(), control.GetAbsoluteY(), control.width, control.height);
 
 			if (border)
 			{
-				requestedClip.x -= 1;
-				requestedClip.y -= 1;
-				requestedClip.w += 2;
-				requestedClip.h += 2;
+				requestedClip.X -= 1;
+				requestedClip.Y -= 1;
+				requestedClip.W += 2;
+				requestedClip.H += 2;
 			}
 
-			int x1 = Math.Max(requestedClip.x, previousClip.x);
-			int y1 = Math.Max(requestedClip.y, previousClip.y);
-			int x2 = Math.Min(requestedClip.x + requestedClip.w, previousClip.x + previousClip.w);
-			int y2 = Math.Min(requestedClip.y + requestedClip.h, previousClip.y + previousClip.h);
+			int x1 = Math.Max(requestedClip.X, previousClip.X);
+			int y1 = Math.Max(requestedClip.Y, previousClip.Y);
+			int x2 = Math.Min(requestedClip.X + requestedClip.W, previousClip.X + previousClip.W);
+			int y2 = Math.Min(requestedClip.Y + requestedClip.H, previousClip.Y + previousClip.H);
 
-			SDL_Rect finalClip = new SDL_Rect();
-			finalClip.x = x1;
-			finalClip.y = y1;
+			Rect finalClip = new Rect(x1, y1, Math.Max(0, x2 - x1), Math.Max(0, y2 - y1));
 
-			finalClip.w = Math.Max(0, x2 - x1);
-			finalClip.h = Math.Max(0, y2 - y1);
+			window.backendWindow.Renderer.SetClipRect(finalClip);
 
-			unsafe
-			{
-				SDL3.SDL_SetRenderClipRect(window.renderer, &finalClip);
-			}
-
-			return finalClip.w > 0 && finalClip.h > 0;
+			return finalClip.W > 0 && finalClip.H > 0;
 		}
 
 		public void ClearClip()
 		{
-			unsafe {
-				SDL3.SDL_SetRenderClipRect(window.renderer, null);
-			}
+			window.backendWindow.Renderer.SetClipRect(null);
 		}
 
 		public UIControl? GetTopmostControlAt(int mx, int my)
@@ -598,29 +534,26 @@ namespace KGUI
 			return value as T;
 		}
 
-		public void HandleSDLEvent(SDL_Event e)
+		public void HandleMouseMotionEvent(int newMouseX, int newMouseY)
 		{
-			//handle mouse events
-			if (e.Type == SDL_EventType.SDL_EVENT_MOUSE_MOTION)
-			{
-				mouseX = (int)e.motion.x;
-				mouseY = (int)e.motion.y;
-
-			}
-			else if (e.Type == SDL_EventType.SDL_EVENT_KEY_DOWN)
-			{
-				lastClickedControl?.OnKeyDown?.Invoke(lastClickedControl, e.key.key, e.key.mod);
-			}
-			else if (e.Type == SDL_EventType.SDL_EVENT_KEY_UP)
-			{
-				lastClickedControl?.OnKeyUp?.Invoke(lastClickedControl, e.key.key, e.key.mod);
-			}
-			else if (e.Type == SDL_EventType.SDL_EVENT_MOUSE_WHEEL)
-			{
-				UIControl? scrollTarget = GetScrollTargetAt(mouseX, mouseY);
-				scrollTarget?.OnScroll?.Invoke(scrollTarget, (int)e.wheel.y);
-			}
+			mouseX = newMouseX;
+			mouseY = newMouseY;
 		}
 
+		public void HandleKeyDownEvent(SDL_Keycode key, SDL_Keymod mod)
+		{
+			lastClickedControl?.OnKeyDown?.Invoke(lastClickedControl, key, mod);
+		}
+
+		public void HandleKeyUpEvent(SDL_Keycode key, SDL_Keymod mod)
+		{
+			lastClickedControl?.OnKeyUp?.Invoke(lastClickedControl, key, mod);
+		}
+
+		public void HandleMouseWheelEvent(int scrollY)
+		{
+			UIControl? scrollTarget = GetScrollTargetAt(mouseX, mouseY);
+			scrollTarget?.OnScroll?.Invoke(scrollTarget, scrollY);
+		}
 	}
 }

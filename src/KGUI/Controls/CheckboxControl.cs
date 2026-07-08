@@ -1,6 +1,5 @@
 
 using System.Drawing;
-using SDL;
 
 namespace KGUI.Controls
 {
@@ -10,16 +9,11 @@ namespace KGUI.Controls
 
 		public Action<bool> OnSelected;
 
-		unsafe SDL_Texture* checkboxTexture;
+		private static readonly string CHECKBOX_TEXTURE = Assets.GetAssetPath("graphics/checkbox.png");
 
 		public CheckboxControl(UIControl parent) : base(parent)
 		{
 			this.text = Localization.GetString(text);
-
-			unsafe
-			{
-				checkboxTexture = LoadTexture(Assets.GetAssetPath("graphics/checkbox.png"));
-			}
 
 			OnClick += (control) =>
 			{
@@ -33,21 +27,18 @@ namespace KGUI.Controls
 		{
 			base.Draw();
 
-			unsafe
+			if (enabled)
 			{
-				if (enabled)
-				{
-					if (mouseDown && selected) DrawTextureSheet(checkboxTexture, 0, 0, 4, 0, 22, 22);
-					else if (selected && focused) DrawTextureSheet(checkboxTexture, 0, 0, 5, 0, 22, 22);
-					else if (selected) DrawTextureSheet(checkboxTexture, 0, 0, 3, 0, 22, 22);
-					else if (focused) DrawTextureSheet(checkboxTexture, 0, 0, 6, 0, 22, 22);
-					else DrawTextureSheet(checkboxTexture, 0, 0, 1, 0, 22, 22);
-				}
-				else
-				{
-					if (selected) DrawTextureSheet(checkboxTexture, 0, 0, 2, 0, 22, 22);
-					else DrawTextureSheet(checkboxTexture, 0, 0, 0, 0, 22, 22);
-				}
+				if (mouseDown && selected) DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 4, 0, 22, 22);
+				else if (selected && focused) DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 5, 0, 22, 22);
+				else if (selected) DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 3, 0, 22, 22);
+				else if (focused) DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 6, 0, 22, 22);
+				else DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 1, 0, 22, 22);
+			}
+			else
+			{
+				if (selected) DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 2, 0, 22, 22);
+				else DrawTextureSheet(CHECKBOX_TEXTURE, 0, 0, 0, 0, 22, 22);
 			}
 				
 			//text

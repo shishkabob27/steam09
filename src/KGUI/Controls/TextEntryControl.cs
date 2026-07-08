@@ -267,10 +267,10 @@ namespace KGUI.Controls
 			Color borderColor;
 			if (enabled) borderColor = Color.FromArgb(20, 20, 20);
 			else borderColor = Color.FromArgb(56, 56, 56);
-			DrawBoxBorder(1, 0, width - 2, 0, borderColor); // top
-			DrawBoxBorder(0, 1, 0, height - 2, borderColor); // left
-			DrawBoxBorder(1, height - 1, width - 2, height - 1, borderColor); // bottom
-			DrawBoxBorder(width - 1, 1, width - 1, height - 2, borderColor); // right
+			DrawLine(1, 0, width - 2, 0, borderColor); // top
+			DrawLine(0, 1, 0, height - 2, borderColor); // left
+			DrawLine(1, height - 1, width - 2, height - 1, borderColor); // bottom
+			DrawLine(width - 1, 1, width - 1, height - 2, borderColor); // right
 
 
 			//corners

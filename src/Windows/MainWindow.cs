@@ -2,11 +2,10 @@ using System.Drawing;
 using KGUI;
 using KGUI.Controls;
 using Newtonsoft.Json;
-using SDL;
 
 public class MainWindow : SteamWindow
 {
-	unsafe SDL_Texture* ResizeTexture;
+	private static readonly string RESIZE_TEXTURE = Assets.GetAssetPath("graphics/resizer.png");
 
 	bool inBrowserWindow = false;
 	bool browserInitialized = false;
@@ -36,14 +35,11 @@ public class MainWindow : SteamWindow
 
 	Queue<Game> gameUpdates = new Queue<Game>();
 
-	public MainWindow(Steam steam, string uuid) : base(steam, uuid)
-	{
-		SetTitle(Localization.GetString("Steam_Root_Title").Replace("%account%", steam.CurrentUser.AccountName));
+	public MainWindow(Steam steam, string uuid) : base(steam, uuid) {}
 
-		unsafe
-		{
-			ResizeTexture = panel.RootControl.LoadTexture(Assets.GetAssetPath("graphics/resizer.png"));
-		}
+	public override void PostInitialize()
+	{
+		backendWindow.SetTitle(Localization.GetString("Steam_Root_Title").Replace("%account%", client.CurrentUser.AccountName));
 
 	// 	unsafe
 	// 	{
@@ -196,23 +192,14 @@ public class MainWindow : SteamWindow
 
 	void OnFriendsButtonClicked()
 	{
-		if (WindowManager.Instance.IsWindowOpen<FriendsWindow>($"friends"))
+		if (windowEnvironment.IsWindowOpen<FriendsWindow>($"friends"))
 		{
-			WindowManager.Instance.HighlightWindow<FriendsWindow>($"friends");
+			windowEnvironment.HighlightWindow<FriendsWindow>($"friends");
 			return;
 		}
 
 		FriendsWindow friendsWindow = new FriendsWindow(client, "friends");
-		friendsWindow.SetTitle($"Friends - {client.CurrentUser.AccountName}");
-		WindowManager.Instance.CreateWindow(friendsWindow);
-	}
-
-	~MainWindow()
-	{
-		unsafe
-		{
-	 		SDL3.SDL_DestroyTexture(ResizeTexture);
-		}
+		windowEnvironment.AddWindow(friendsWindow);
 	}
 
 	public override void Update(float deltaTime)
@@ -291,17 +278,14 @@ public class MainWindow : SteamWindow
 		if (!inBrowserWindow)
 			GameListDraw();
 		
-		unsafe
-		{
-			panel.RootControl.DrawTexture(ResizeTexture, mWidth - 23, mHeight - GetInternalY() - 23);
-		}
+		panel.RootControl.DrawTexture(RESIZE_TEXTURE, backendWindow.GetWindowWidth() - 23, backendWindow.GetWindowHeight() - GetInternalY() - 23);
 	}
 
 	public void GameListDraw()
 	{
 		panel.DrawText(Localization.GetString("Steam_GamesColumn"), 53, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
-		panel.DrawText(Localization.GetString("Steam_StatusColumn"), (mWidth / 2) - 24, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
-		panel.DrawText(Localization.GetString("Steam_DeveloperColumn"), mWidth - 250, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
+		panel.DrawText(Localization.GetString("Steam_StatusColumn"), (GetInternalWidth() / 2) - 24, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
+		panel.DrawText(Localization.GetString("Steam_DeveloperColumn"), GetInternalWidth() - 250, 73, Color.FromArgb(216, 222, 211), fontSize: 7);
 	}
 
 	GameCategoryToggleControl CreateGameCategory(string categoryName, int index, ListViewControl list)
@@ -373,8 +357,8 @@ public class MainWindow : SteamWindow
 			if (inBrowserWindow) return;
 
 			//check if mouse is over the favorite icon
-			SDL_FRect favoriteIconRect = gameItemControl.GetFavoriteIconRect();
-			if (favoriteIconRect.x <= gameItemControl.GetRelativeMouseX() && favoriteIconRect.x + favoriteIconRect.w >= gameItemControl.GetRelativeMouseX() && favoriteIconRect.y <= gameItemControl.GetRelativeMouseY() && favoriteIconRect.y + favoriteIconRect.h >= gameItemControl.GetRelativeMouseY())
+			Rect favoriteIconRect = gameItemControl.GetFavoriteIconRect();
+			if (favoriteIconRect.X <= gameItemControl.GetRelativeMouseX() && favoriteIconRect.X + favoriteIconRect.W >= gameItemControl.GetRelativeMouseX() && favoriteIconRect.Y <= gameItemControl.GetRelativeMouseY() && favoriteIconRect.Y + favoriteIconRect.H >= gameItemControl.GetRelativeMouseY())
 			{
 				game.IsFavorite = !game.IsFavorite;
 				SaveFavorites();
@@ -399,6 +383,7 @@ public class MainWindow : SteamWindow
 			panel.SetFocus(gameItemControl);
 
 			PopupMenuWindow popupMenuWindow = new PopupMenuWindow(Steam.Instance, $"GameAction_{game.AppID}");
+			windowEnvironment.AddWindow(popupMenuWindow);
 			popupMenuWindow.AddItem(game.Status == GameStatus.Installed ? Localization.GetString("SteamUI_GamesDialog_RightClick_LaunchGames") : Localization.GetString("SteamUI_GamesDialog_RightClick_InstallGame"), (c) =>
 			{
 				OnGameAction(game.AppID);
@@ -412,16 +397,7 @@ public class MainWindow : SteamWindow
 			});
 			popupMenuWindow.AddItem(Localization.GetString("Steam_RightClick_DeleteLocalContent"), null);
 			popupMenuWindow.AddSeparator();
-			popupMenuWindow.AddItem(Localization.GetString("Steam_Properties"), (c) =>
-			{
-				Game? game = Steam.Instance.Games.Find(x => x.AppID == gameItemControl.game.AppID);
-				if (game == null) return;
-
-				GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(Steam.Instance, "properties_" + game.AppID);
-				gamePropertiesWindow.SetGame(game);
-				WindowManager.Instance.CreateWindow(gamePropertiesWindow);
-			});
-			WindowManager.Instance.CreateWindow(popupMenuWindow);
+			popupMenuWindow.AddItem(Localization.GetString("Steam_Properties"), (c) => OnGameProperties(game.AppID));
 		};
 	}
 
@@ -525,16 +501,15 @@ public class MainWindow : SteamWindow
 			}
 			else
 			{
-				if (WindowManager.Instance.IsWindowOpen<InstallGameWindow>($"install_wizard_{game.AppID}"))
+				if (windowEnvironment.IsWindowOpen<InstallGameWindow>($"install_wizard_{game.AppID}"))
 				{
-					WindowManager.Instance.HighlightWindow<InstallGameWindow>($"install_wizard_{game.AppID}");
+					windowEnvironment.HighlightWindow<InstallGameWindow>($"install_wizard_{game.AppID}");
 					return;
 				}
 
 				InstallGameWindow installGameWindow = new InstallGameWindow(client, $"install_wizard_{game.AppID}");
-				installGameWindow.SetTitle(Localization.GetString("Steam_InstallAppWizard_Title").Replace("%game%", game.Name));
+				windowEnvironment.AddWindow(installGameWindow);
 				installGameWindow.SetGame(game);
-				WindowManager.Instance.CreateWindow(installGameWindow);
 			}
 		}
 		else if (game.Status == GameStatus.Queued || game.Status == GameStatus.Downloading || game.DownloadStatus != DownloadStatus.None)
@@ -562,15 +537,15 @@ public class MainWindow : SteamWindow
 		Game? game = client.Games.Find(x => x.AppID == gameID);
 		if (game == null) return;
 
-		if (WindowManager.Instance.IsWindowOpen<GamePropertiesWindow>($"properties_{game.AppID}"))
+		if (windowEnvironment.IsWindowOpen<GamePropertiesWindow>($"properties_{game.AppID}"))
 		{
-			WindowManager.Instance.HighlightWindow<GamePropertiesWindow>($"properties_{game.AppID}");
+			windowEnvironment.HighlightWindow<GamePropertiesWindow>($"properties_{game.AppID}");
 			return;
 		}
 
-		GamePropertiesWindow gamePropertiesWindow = new GamePropertiesWindow(client, "properties_" + game.AppID);
+		GamePropertiesWindow gamePropertiesWindow = new(client, $"properties_{game.AppID}");
+		windowEnvironment.AddWindow(gamePropertiesWindow);
 		gamePropertiesWindow.SetGame(game);
-		WindowManager.Instance.CreateWindow(gamePropertiesWindow);
 	}
 
 	void SaveFavorites()

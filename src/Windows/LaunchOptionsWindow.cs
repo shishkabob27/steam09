@@ -12,7 +12,9 @@ public class LaunchOptionsWindow : SteamWindow
 
 	List<RadioButtonControl> radioButtons = new List<RadioButtonControl>();
 
-	public LaunchOptionsWindow(Steam steam, string uuid) : base(steam, uuid)
+	public LaunchOptionsWindow(Steam steam, string uuid) : base(steam, uuid) {}
+
+	public override void PostInitialize()
 	{
 		launchButton = panel.GetControlByID<ButtonControl>("launchbutton");
 		cancelButton = panel.GetControlByID<ButtonControl>("cancelbutton");
@@ -24,13 +26,15 @@ public class LaunchOptionsWindow : SteamWindow
 		cancelButton.OnClick += (control) =>
 		{
 			game.LaunchAppTaskStatus = LaunchAppTaskStatus.None;
-			WindowManager.Instance.CloseWindow(this);
+			windowEnvironment.RemoveWindow(this);
 		};
 	}
 
 	public void SetGame(Game game)
 	{
 		this.game = game;
+
+		backendWindow.SetTitle(Localization.GetString("Steam_GameLaunchOptions_Title").Replace("%game%", game.Name));
 	}
 
 	public void SetLaunchConfigs(List<LaunchConfig> launchConfigs)
@@ -54,7 +58,7 @@ public class LaunchOptionsWindow : SteamWindow
 		}
 
 		int windowHeight = 160 + Math.Max(0, launchConfigs.Count - 2) * 30;
-		SetWindowSize(400, windowHeight);
+		backendWindow.SetWindowSize(400, windowHeight);
 	}
 
 	public override void Update(float deltaTime)
@@ -86,6 +90,6 @@ public class LaunchOptionsWindow : SteamWindow
 	public void Launch(UIControl control)
 	{
 		client.BeginLaunchGame(game, launchConfigs[selectedLaunchConfig]);
-		WindowManager.Instance.CloseWindow(this);
+		windowEnvironment.RemoveWindow(this);
 	}
 }

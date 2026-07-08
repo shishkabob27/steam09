@@ -20,9 +20,9 @@ public class SteamGuardAuthenticator : IAuthenticator
 		windowCreationQueue.Enqueue(() =>
 		{
 			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(currentWindow);
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetDeviceCodeMode();
-			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		if (previousCodeWasIncorrect)
@@ -42,9 +42,9 @@ public class SteamGuardAuthenticator : IAuthenticator
 		windowCreationQueue.Enqueue(() =>
 		{
 			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(currentWindow);
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetEmailMode(email);
-			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		if (previousCodeWasIncorrect)
@@ -63,9 +63,9 @@ public class SteamGuardAuthenticator : IAuthenticator
 		windowCreationQueue.Enqueue(() =>
 		{
 			currentWindow = new SteamGuardWindow(Steam.Instance, "steam_guard_window");
+			WindowManager.Instance.GetWindowEnvironment("desktop")?.AddWindow(currentWindow);
 			currentWindow.SetAuthenticator(this);
 			currentWindow.SetConfirmationMode();
-			WindowManager.Instance.CreateWindow(currentWindow);
 		});
 
 		return Task.FromResult(true);

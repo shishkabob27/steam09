@@ -10,7 +10,9 @@ public class SteamGuardWindow : SteamWindow
 	SteamGuardAuthenticator? authenticator;
 	bool isConfirmationMode = false;
 
-	public SteamGuardWindow(Steam steam, string uuid) : base(steam, uuid)
+	public SteamGuardWindow(Steam steam, string uuid) : base(steam, uuid) {}
+
+	public override void PostInitialize()
 	{
 		promptLabel = panel.GetControlByID<LabelControl>("PromptLabel");
 		codeEdit = panel.GetControlByID<TextEntryControl>("CodeEdit");
@@ -83,7 +85,7 @@ public class SteamGuardWindow : SteamWindow
 		// Send the code to the authenticator
 		authenticator?.OnCodeEntered(codeEdit.text);
 
-		WindowManager.Instance.CloseWindow(this);
+		windowEnvironment.RemoveWindow(this);
 	}
 
 	void OnCancelPressed()
@@ -97,7 +99,7 @@ public class SteamGuardWindow : SteamWindow
 			authenticator?.OnCodeCancelled();
 		}
 
-		WindowManager.Instance.CloseWindow(this);
+		windowEnvironment.RemoveWindow(this);
 	}
 
 	public override void OnKeyDown(SDL_Keycode key, SDL_Keymod mod)

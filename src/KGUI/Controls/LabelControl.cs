@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Xml.Serialization;
-using SDL;
 
 namespace KGUI.Controls
 {
@@ -13,7 +12,7 @@ namespace KGUI.Controls
 		{
 		}
 
-		public unsafe override void Draw()
+		public override void Draw()
 		{
 			base.Draw();
 			

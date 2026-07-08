@@ -15,7 +15,9 @@ public class InstallGameWindow : SteamWindow
 	string gameSize; //In MB
 	int diskSpaceAvailable; //In MB
 
-	public InstallGameWindow(Steam steam, string uuid) : base(steam, uuid)
+	public InstallGameWindow(Steam steam, string uuid) : base(steam, uuid) {}
+
+	public override void PostInitialize()
 	{
 		backButton = panel.GetControlByID<ButtonControl>("BackButton");
 		nextButton = panel.GetControlByID<ButtonControl>("NextButton");
@@ -42,13 +44,13 @@ public class InstallGameWindow : SteamWindow
 			else if (screen == 1)
 			{
 				client.DownloadManager.DownloadGame(game.AppID);
-				WindowManager.Instance.CloseWindow(this);
+				windowEnvironment.RemoveWindow(this);
 			}
 		};
 
 		cancelButton.OnClick += (cancelButton) =>
 		{
-			WindowManager.Instance.CloseWindow(this);
+			windowEnvironment.RemoveWindow(this);
 		};
 
 		GetDiskSpaceAvailable();
@@ -58,11 +60,15 @@ public class InstallGameWindow : SteamWindow
 	{
 		this.game = game;
 		gameSize = (game.EstimatedSize / 1024 / 1024).ToString("F0");
+
+		backendWindow.SetTitle(Localization.GetString("Steam_InstallAppWizard_Title").Replace("%game%", game.Name));
 	}
 
 	public override void Draw()
 	{
 		base.Draw();
+
+		if (game == null) return;
 
 		nextButton.text = screen == 0 ? Localization.GetString("WizardPanel_Next") : Localization.GetString("Steam_Install");
 
@@ -74,8 +80,8 @@ public class InstallGameWindow : SteamWindow
 			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceRequired"), 30, 120, Color.FromArgb(255, 255, 255, 255));
 			panel.DrawText(Localization.GetString("Steam_ScanCDKey_SpaceAvailable"), 30, 145, Color.FromArgb(255, 255, 255, 255));
 
-			panel.DrawText($"{gameSize} MB", (mWidth / 2) + 10, 120, Color.FromArgb(255, 255, 255, 255));
-			panel.DrawText($"{diskSpaceAvailable} MB", (mWidth / 2) + 10, 145, Color.FromArgb(255, 255, 255, 255));
+			panel.DrawText($"{gameSize} MB", (GetInternalWidth() / 2) + 10, 120, Color.FromArgb(255, 255, 255, 255));
+			panel.DrawText($"{diskSpaceAvailable} MB", (GetInternalWidth() / 2) + 10, 145, Color.FromArgb(255, 255, 255, 255));
 		}
 		else if (screen == 1)
 		{

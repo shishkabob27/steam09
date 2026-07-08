@@ -1,13 +1,12 @@
 using System.Drawing;
 using KGUI;
 using KGUI.Controls;
-using SDL;
 using SteamKit2;
 
 public class FriendItemControl : UIControl
 {
 	public RemoteImageControl AvatarImage;
-	public unsafe SDL_Texture* AvatarBorderTexture;
+	private static readonly string AVATAR_BORDER_TEXTURE = Assets.GetAssetPath("graphics/avatar_border.png");
 
 	public Friend Friend;
 
@@ -18,10 +17,6 @@ public class FriendItemControl : UIControl
 
 	public FriendItemControl(UIControl parent) : base(parent)
 	{
-		unsafe
-		{
-			AvatarBorderTexture = LoadTexture(Assets.GetAssetPath("graphics/avatar_border.png"));
-		}
 	}
 
 	public void SetSelf(User user)
@@ -70,12 +65,9 @@ public class FriendItemControl : UIControl
 		if (!Self || DrawBackground) DrawBox(XOffset, 0, width - XOffset, height, Color.FromArgb(58, 58, 60));
 
 		// //border
-		unsafe
-		{
-			if (Friend.PersonaState == EPersonaState.Offline) DrawTextureSheet(AvatarBorderTexture, XOffset + 4, 4, 0, 0, 40, 40);
-			else if (Friend.GamePlayed != 0) DrawTextureSheet(AvatarBorderTexture, XOffset + 4, 4, 2, 0, 40, 40);
-			else DrawTextureSheet(AvatarBorderTexture, XOffset + 4, 4, 1, 0, 40, 40);
-		}
+		if (Friend.PersonaState == EPersonaState.Offline) DrawTextureSheet(AVATAR_BORDER_TEXTURE, XOffset + 4, 4, 0, 0, 40, 40);
+		else if (Friend.GamePlayed != 0) DrawTextureSheet(AVATAR_BORDER_TEXTURE, XOffset + 4, 4, 2, 0, 40, 40);
+		else DrawTextureSheet(AVATAR_BORDER_TEXTURE, XOffset + 4, 4, 1, 0, 40, 40);
 
 		Color nameColor;
 		if (Friend.PersonaState == EPersonaState.Offline) nameColor = Color.FromArgb(156, 158, 157);
@@ -97,7 +89,6 @@ public class FriendItemControl : UIControl
 		else statusText = "Online";
 
 		//game played
-
 		DrawText(statusText, XOffset + 52, 21, statusColor);
 		if (Friend.GamePlayed != 0) DrawText(Friend.GamePlayedName, XOffset + 52, 33, statusColor);
 	}

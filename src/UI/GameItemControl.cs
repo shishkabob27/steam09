@@ -1,24 +1,18 @@
 using System.Drawing;
 using KGUI;
 using KGUI.Controls;
-using SDL;
 
-public class GameItemControl : UIControl, IDisposable
+public class GameItemControl : UIControl
 {
 	public Game game;
 	RemoteImageControl gameIconControl;
 	public bool highlighted = false;
 
-	unsafe SDL_Texture* FavoriteIcon;
+	private static readonly string FAVORITE_BUTTON_TEXTURE = Assets.GetAssetPath("graphics/favorite_button.png");
 
 	public GameItemControl(UIControl parent) : base(parent)
 	{
 		height = 20;
-
-		unsafe
-		{
-			FavoriteIcon = LoadTexture(Assets.GetAssetPath("graphics/favorite_button.png"));
-		}
 
 		gameIconControl = new RemoteImageControl(this);
 		gameIconControl.SetSize(16, 16);
@@ -32,17 +26,6 @@ public class GameItemControl : UIControl, IDisposable
 	{
 		this.game = game;
 		gameIconControl.SetImageUrl(game.IconUrl);
-	}
-	
-	public void Dispose()
-	{
-		// SDL.DestroyTexture(gameIcon);
-		// gameIcon = default;
-
-		// SDL.DestroyTexture(FavoriteIcon);
-		// FavoriteIcon = default;
-
-		GC.SuppressFinalize(this);
 	}
 
 	public override void Draw()
@@ -65,14 +48,11 @@ public class GameItemControl : UIControl, IDisposable
 		DrawText(game.GetStatusString(), (width / 2) - 24, 5, downloadStatusColor);
 		DrawText(game.Developer, (width - 248), 5, (game.Status == GameStatus.NotInstalled && !game.HasPartialDownload) ? textColor : Color.FromArgb(255, 255, 255), true, true);
 
-		unsafe
-		{
-			DrawTextureSheet(FavoriteIcon, (width / 2) - 44, 2, game.IsFavorite ? 1 : 0, 0, 16, 16);
-		}
+		DrawTextureSheet(FAVORITE_BUTTON_TEXTURE, (width / 2) - 44, 2, game.IsFavorite ? 1 : 0, 0, 16, 16);
 	}
 
-	public SDL_FRect GetFavoriteIconRect()
+	public Rect GetFavoriteIconRect()
 	{
-		return new SDL_FRect{ x = (width / 2) - 44, y = 2, w = 16, h = 16 };
+		return new Rect{ X = (width / 2) - 44, Y = 2, W = 16, H = 16 };
 	}
 }

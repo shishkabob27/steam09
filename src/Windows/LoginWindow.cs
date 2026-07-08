@@ -16,7 +16,9 @@ public class LoginWindow : SteamWindow
 	bool isLoggingIn = false;
 	private AuthSession _authSession;
 
-	public LoginWindow(Steam client, string uuid) : base(client, uuid)
+	public LoginWindow(Steam client, string uuid) : base(client, uuid) {}
+	
+	public override void PostInitialize()
 	{
 		UsernameEdit = panel.GetControlByID<TextEntryControl>("UserNameEdit");
 		PasswordEdit = panel.GetControlByID<TextEntryControl>("PasswordEdit");
@@ -41,7 +43,7 @@ public class LoginWindow : SteamWindow
 
 	void OnCancel()
 	{
-		WindowManager.Instance.CloseWindow(this);
+		windowEnvironment.RemoveWindow(this);
 	}
 
 	void OnCreateNewAccount()
@@ -85,7 +87,7 @@ public class LoginWindow : SteamWindow
 
 				var pollResponse = await _authSession.PollingWaitForResultAsync();
 
-				WindowManager.Instance.CloseWindow<SteamGuardWindow>();
+				windowEnvironment.RemoveWindow<SteamGuardWindow>("steam_guard_window");
 
 				// Logon to Steam with the access token we have received
 				// Note that we are using RefreshToken for logging on here
@@ -99,7 +101,7 @@ public class LoginWindow : SteamWindow
 
 				Steam.Instance.CurrentUser = new User(0, pollResponse.AccountName, "", pollResponse.RefreshToken, null);
 
-				WindowManager.Instance.CloseWindow(this);
+				windowEnvironment.RemoveWindow(this);
 			}
 			catch (System.Exception e)
 			{

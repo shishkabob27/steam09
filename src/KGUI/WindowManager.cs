@@ -15,101 +15,67 @@ namespace KGUI
 		}
 		private static WindowManager? _instance;
 
-		private List<BaseWindow> _pendingWindows = [];
-		private List<BaseWindow> _pendingWindowsToRemove = [];
-		private List<BaseWindow> _windows = [];
+		private List<WindowEnvironment> _windowEnvironments = [];
 
-		public List<BaseWindow> GetWindows()
+		public void AddWindowEnvironment(WindowEnvironment windowEnvironment)
 		{
-			return _windows;
+			_windowEnvironments.Add(windowEnvironment);
+		}
+
+		public void RemoveWindowEnvironment(WindowEnvironment windowEnvironment)
+		{
+			_windowEnvironments.Remove(windowEnvironment);
+		}
+
+		public WindowEnvironment? GetWindowEnvironment(string uuid)
+		{
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
+			{
+				if (windowEnvironment.UUID == uuid)
+				{
+					return windowEnvironment;
+				}
+			}
+			return null;
 		}
 
 		public void Update(float deltaTime)
 		{
-			foreach (BaseWindow window in _pendingWindows)
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
 			{
-				_windows.Add(window);
-			}
-			_pendingWindows.Clear();
-
-			List<BaseWindow> ActualWindowsToRemove = new List<BaseWindow>();
-			foreach (BaseWindow window in _pendingWindowsToRemove)
-			{
-				//check if window is already faded out
-				if (window.windowOpacity <= 0.0f)
-				{
-					window.CloseWindow();
-					_windows.Remove(window);
-					ActualWindowsToRemove.Add(window);
-					continue;
-				}
-
-				window.isFadingOut = true;
-			}
-
-			foreach (BaseWindow window in ActualWindowsToRemove)
-			{
-				_pendingWindowsToRemove.Remove(window);
-			}
-
-			foreach (BaseWindow window in _windows)
-			{
-				window?.Update(deltaTime);
+				windowEnvironment.Update(deltaTime);
 			}
 		}
 
 		public void Draw()
 		{
-			foreach (BaseWindow window in _windows)
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
 			{
-				window?.PreDraw();
-				window?.Draw();
-				window?.PostDraw();
+				windowEnvironment.Draw();
 			}
-		}
-
-		public void CreateWindow(BaseWindow window)
-		{
-			_pendingWindows.Add(window);
-		}
-
-		public void CloseWindow(BaseWindow? window)
-		{
-			if (window == null)
-			{
-				return;
-			}
-			
-			_pendingWindowsToRemove.Add(window);
 		}
 
 		public void CloseWindow<T>(string uuid = "") where T : BaseWindow
 		{
-			foreach (BaseWindow window in _windows)
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
 			{
-				if (window is T && (window.UUID == uuid || string.IsNullOrEmpty(uuid)))
-				{
-					CloseWindow(window);
-				}
+				windowEnvironment.RemoveWindow<T>(uuid);
 			}
 		}
 
 		public void HighlightWindow<T>(string uuid = "") where T : BaseWindow
 		{
-			foreach (BaseWindow window in _windows)
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
 			{
-				if (window is T && (window.UUID == uuid || string.IsNullOrEmpty(uuid)))
-				{
-					window.FocusWindow();
-				}
+				windowEnvironment.HighlightWindow<T>(uuid);
 			}
 		}
 
 		public bool IsWindowOpen<T>(string uuid) where T : BaseWindow
 		{
-			foreach (BaseWindow window in _windows)
+			foreach (WindowEnvironment windowEnvironment in _windowEnvironments)
 			{
-				if (window is T && (window.UUID == uuid || string.IsNullOrEmpty(uuid)))
+				if (windowEnvironment.IsWindowOpen<T>(uuid))
 				{
 					return true;
 				}

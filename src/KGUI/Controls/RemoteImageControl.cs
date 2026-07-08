@@ -6,7 +6,6 @@ namespace KGUI.Controls
 {
 	public class RemoteImageControl : UIControl
     {
-        unsafe SDL_Texture* imageTexture;
         bool readyToDraw = false;
         bool pendingFirstDrawFetch;
         int fetchGeneration;
@@ -23,6 +22,7 @@ namespace KGUI.Controls
         public bool Ready { get { return readyToDraw; } }
 
         string imageUrl = "";
+        private string? imageTexturePath;
 
 		const string cacheFolder = "webcache";
 
@@ -43,21 +43,9 @@ namespace KGUI.Controls
             this.imageUrl = newUrl;
             fetchGeneration++;
 
-
             readyToDraw = false;
             lock (pendingTextureLock)
                 pendingTexturePath = null;
-
-
-            unsafe
-            {
-                if (imageTexture != null)
-                {
-                    SDL3.SDL_DestroyTexture(imageTexture);
-                    imageTexture = null;
-                }
-            }
-
 
             pendingFirstDrawFetch = !string.IsNullOrWhiteSpace(newUrl);
         }
@@ -79,20 +67,17 @@ namespace KGUI.Controls
 
 
             string cachePath = Path.Combine(Utils.GetAbsolutePath(cacheFolder), cleanURL(imageUrl) + ".png");
+            imageTexturePath = cachePath;
 
             // load the cached image immediately if available and not still downloading
             if (File.Exists(cachePath) && !inProgressDownloads.ContainsKey(cachePath))
             {
-                unsafe
+                if (string.IsNullOrWhiteSpace(imageTexturePath) || !File.Exists(imageTexturePath))
                 {
-                    imageTexture = LoadTexture(cachePath);
-                    if (imageTexture == null)
-                    {
-                        Console.WriteLine("ImageControl: Error loading image: " + cachePath);
-                        return;
-                    }
-                    readyToDraw = true;
+                    Console.WriteLine("ImageControl: Error loading image: " + cachePath);
+                    return;
                 }
+                readyToDraw = true;
             }
             else
             {
@@ -153,7 +138,7 @@ namespace KGUI.Controls
             }
         }
 
-        public unsafe override void Draw()
+        public override void Draw()
         {
             base.Draw();
 
@@ -164,44 +149,24 @@ namespace KGUI.Controls
                     AttemptFetchImage();
             }
 
-            string? texturePathToLoad = null;
             lock (pendingTextureLock)
             {
-                texturePathToLoad = pendingTexturePath;
                 pendingTexturePath = null;
             }
 
-            if (!string.IsNullOrWhiteSpace(texturePathToLoad))
-            {
-                var loadedTexture = LoadTexture(texturePathToLoad);
-                if (loadedTexture != null)
-                {
-                    imageTexture = loadedTexture;
-                    readyToDraw = true;
-                }
-            }
-
-            if (imageTexture != null && readyToDraw)
+            if (!string.IsNullOrWhiteSpace(imageTexturePath) && File.Exists(imageTexturePath))
             {
                 if (backgroundColor != Color.Transparent)
                 {
                     DrawBox(0, 0, width, height, backgroundColor);
                 }
-                DrawTextureRect(imageTexture, 0, 0, width, height);
+                DrawTextureRect(imageTexturePath, 0, 0, width, height);
             }
         }
 
         private string cleanURL(string url)
         {
             return url.Replace("https://", "").Replace("http://", "").Replace("//", "/").Replace("?", "_").Replace("&", "_").Replace("=", "_").Replace(".", "_").Replace(":", "_").Replace(";", "_").Replace(",", "_").Replace(" ", "_").Replace("|", "_").Replace("\\", "_").Replace("/", "_").Replace("*", "_").Replace("?", "_").Replace("&", "_").Replace("=", "_").Replace(".", "_").Replace(":", "_").Replace(";", "_").Replace(",", "_").Replace(" ", "_").Replace("|", "_").Replace("\\", "_").Replace("/", "_").Replace("*", "_");
-        }
-
-        public override void Destroy()
-        {
-            base.Destroy();
-            unsafe {
-                SDL3.SDL_DestroyTexture(imageTexture);
-            }
         }
     }
 }

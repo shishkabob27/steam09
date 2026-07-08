@@ -3,6 +3,7 @@ using System.Drawing;
 using SDL;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Numerics;
 
 namespace KGUI.Controls
 {
@@ -236,30 +237,29 @@ namespace KGUI.Controls
 			this.height = height;
 		}
 
-		public virtual unsafe SDL_Texture* LoadTexture(string path)
+		public virtual void DrawTexture(string texturePath, int x, int y)
 		{
-			return parent.LoadTexture(path);
+			parent.DrawTexture(texturePath, this.x + x, this.y + y);
 		}
 
-		public virtual unsafe void DrawTexture(SDL_Texture* texture, int x, int y)
+		public virtual void DrawTextureRect(string texturePath, int x, int y, int width, int height)
 		{
-			if (texture == null) return;
-			parent.DrawTexture(texture, this.x + x, this.y + y);
+			parent.DrawTextureRect(texturePath, this.x + x, this.y + y, width, height);
 		}
 
-		public virtual unsafe void DrawTextureRect(SDL_Texture* texture, int x, int y, int width, int height)
+		public virtual void DrawTexture9Grid(string texturePath, int x, int y, int width, int height, int top, int left, int bottom, int right, float scale)
 		{
-			parent.DrawTextureRect(texture, this.x + x, this.y + y, width, height);
+			parent.DrawTexture9Grid(texturePath, this.x + x, this.y + y, width, height, top, left, bottom, right, scale);
 		}
 
-		public virtual unsafe void DrawTexture9Grid(SDL_Texture* texture, int x, int y, int width, int height, int top, int left, int bottom, int right, float scale)
+		public virtual void DrawTextureSheet(string texturePath, int x, int y, int indexX, int indexY, int cellWidth, int cellHeight)
 		{
-			parent.DrawTexture9Grid(texture, this.x + x, this.y + y, width, height, top, left, bottom, right, scale);
+			parent.DrawTextureSheet(texturePath, this.x + x, this.y + y, indexX, indexY, cellWidth, cellHeight);
 		}
 
-		public virtual unsafe void DrawTextureSheet(SDL_Texture* texture, int x, int y, int indexX, int indexY, int cellWidth, int cellHeight)
+		public virtual Vector2 GetTextureSize(string texturePath)
 		{
-			parent.DrawTextureSheet(texture, this.x + x, this.y + y, indexX, indexY, cellWidth, cellHeight);
+			return parent.GetTextureSize(texturePath);
 		}
 
 		public virtual void DrawPoint(int x, int y, Color color)

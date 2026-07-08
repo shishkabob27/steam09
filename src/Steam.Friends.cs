@@ -95,7 +95,7 @@ public partial class Steam
 		{
 			friend.GamePlayedName = app.Value.KeyValues["common"]["name"].Value ?? "";
 
-			FriendsWindow friendsWindow = (FriendsWindow)WindowManager.Instance.GetWindows().Find(x => x is FriendsWindow);
+			FriendsWindow? friendsWindow = WindowManager.Instance.GetWindowEnvironment("desktop")?.GetWindows()?.OfType<FriendsWindow>().FirstOrDefault();
 			if (friendsWindow != null) friendsWindow.UpdateFriend(friend);
 
 			// ChatWindow chatWindow = (ChatWindow)Windows.Find(x => x is ChatWindow && ((ChatWindow)x).FriendSteamID == friend.SteamID);
