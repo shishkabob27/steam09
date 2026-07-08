@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<GamePropertiesWindow title="Install Game" width="516" height="400" resizable="false">
+<GamePropertiesWindow title="Properties" width="516" height="400" resizable="false">
 	<TabListControl x="8" y="12" height="22">
 		<TabItemControl width="98" text="General" default="true"/>
 		<TabItemControl width="98" text="Updates"/>
